@@ -377,10 +377,6 @@ Be analytical, strategic, and actionable. Always explain the business impact of 
 
     const messages = [
       {
-        role: 'system',
-        content: systemPrompt
-      },
-      {
         role: 'user',
         content: scenario
       }
@@ -397,6 +393,7 @@ Be analytical, strategic, and actionable. Always explain the business impact of 
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 4096,
+        system: systemPrompt,
         tools,
         messages
       }),
@@ -447,6 +444,7 @@ Be analytical, strategic, and actionable. Always explain the business impact of 
         body: JSON.stringify({
           model: 'claude-sonnet-4-5',
           max_tokens: 4096,
+          system: systemPrompt,
           messages: [
             ...messages,
             { role: 'assistant', content: data.content },
