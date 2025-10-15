@@ -299,6 +299,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   subscribeToChanges: () => {
+    let debounceTimer: NodeJS.Timeout;
+    
     const nodesChannel = supabase
       .channel('nodes-changes')
       .on(
@@ -309,7 +311,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           table: 'nodes'
         },
         () => {
-          get().fetchGraph();
+          // Debounce to avoid rapid refetches
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            get().fetchGraph();
+          }, 500);
         }
       )
       .subscribe();
@@ -324,12 +330,17 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           table: 'edges'
         },
         () => {
-          get().fetchGraph();
+          // Debounce to avoid rapid refetches
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            get().fetchGraph();
+          }, 500);
         }
       )
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(nodesChannel);
       supabase.removeChannel(edgesChannel);
     };
