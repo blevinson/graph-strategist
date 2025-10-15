@@ -39,9 +39,12 @@ export default function InspectorPanel() {
   useEffect(() => {
     if (node) {
       setEditedProps(node.data.props);
+      setWorkflows([]); // Clear old workflows first
       fetchNodeWorkflows();
+    } else {
+      setWorkflows([]);
     }
-  }, [node]);
+  }, [node?.id]); // Use node.id to ensure fresh fetch when node changes
 
   const fetchNodeWorkflows = async () => {
     if (!selectedNode) return;
