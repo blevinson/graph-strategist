@@ -68,19 +68,19 @@ export const CoPilotChat = () => {
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.output || 'Done!',
+        content: data.output_text || 'Done!',
         timestamp: new Date(),
-        toolCalls: data.toolResults,
+        toolCalls: data.tool_results,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
 
       // Refresh graph if tools were used
-      if (data.toolResults && data.toolResults.length > 0) {
+      if (data.tool_results && data.tool_results.length > 0) {
         await fetchGraph();
         toast({
           title: 'Graph Updated',
-          description: `${data.toolResults.length} action(s) completed`,
+          description: `${data.tool_results.length} action(s) completed`,
         });
       }
     } catch (error) {
