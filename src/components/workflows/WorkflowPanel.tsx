@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Play, Loader2 } from 'lucide-react';
+import { Play, Loader2, CheckCircle, XCircle, Clock, List } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Workflow {
   id: string;
@@ -28,12 +30,22 @@ interface WorkflowRun {
   created_at: string;
   started_at: string | null;
   finished_at: string | null;
+  log: {
+    events?: Array<{
+      step?: string;
+      status?: string;
+      result?: any;
+      error?: string;
+      timestamp?: string;
+    }>;
+  };
 }
 
 export default function WorkflowPanel() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [runs, setRuns] = useState<Record<string, WorkflowRun>>({});
   const [loading, setLoading] = useState(true);
+  const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchWorkflows();
@@ -72,7 +84,7 @@ export default function WorkflowPanel() {
 
       if (error) throw error;
 
-      setRuns(prev => ({ ...prev, [workflowId]: data }));
+      setRuns(prev => ({ ...prev, [workflowId]: data as WorkflowRun }));
       toast.success('Workflow started successfully');
       
       // Trigger the workflow runner
@@ -102,19 +114,54 @@ export default function WorkflowPanel() {
         .single();
 
       if (!error && data) {
-        setRuns(prev => ({ ...prev, [workflowId]: data }));
+        setRuns(prev => ({ ...prev, [workflowId]: data as WorkflowRun }));
         
-        if (data.status === 'succeeded' || data.status === 'failed' || data.status === 'cancelled') {
-          toast.success(`Workflow ${data.status}`);
+        if (data.status === 'succeeded') {
+          toast.success('Workflow completed successfully');
+          return;
+        } else if (data.status === 'failed') {
+          toast.error('Workflow failed');
+          return;
+        } else if (data.status === 'cancelled') {
+          toast.info('Workflow cancelled');
           return;
         }
         
         // Continue polling
-        setTimeout(checkStatus, 2000);
+        setTimeout(checkStatus, 1000);
       }
     };
 
-    setTimeout(checkStatus, 2000);
+    setTimeout(checkStatus, 1000);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'succeeded':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed':
+        return <XCircle className="h-4 w-4 text-destructive" />;
+      case 'running':
+        return <Loader2 className="h-4 w-4 animate-spin text-primary" />;
+      case 'queued':
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'succeeded':
+        return 'default';
+      case 'failed':
+        return 'destructive';
+      case 'running':
+      case 'queued':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
   };
 
   if (loading) {
@@ -137,13 +184,14 @@ export default function WorkflowPanel() {
     <div className="space-y-4 p-4">
       {workflows.map((workflow) => {
         const run = runs[workflow.id];
-        const isRunning = run?.status === 'queued' || run?.status === 'running' || run?.status === 'starting';
+        const isRunning = run?.status === 'queued' || run?.status === 'running';
+        const hasLogs = run?.log?.events && run.log.events.length > 0;
 
         return (
           <Card key={workflow.id}>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-lg">{workflow.name}</CardTitle>
                   <CardDescription>
                     {workflow.mode} • {workflow.workflow_steps.length} steps
@@ -169,24 +217,91 @@ export default function WorkflowPanel() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Steps:</div>
-                <div className="flex flex-wrap gap-2">
-                  {workflow.workflow_steps.map((step) => (
-                    <Badge key={step.id} variant="outline">
-                      {step.name} ({step.type})
-                    </Badge>
-                  ))}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Steps:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {workflow.workflow_steps.map((step) => (
+                      <Badge key={step.id} variant="outline">
+                        {step.name} ({step.type})
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
+
                 {run && (
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="text-sm text-muted-foreground">
-                      Last run: <Badge variant={
-                        run.status === 'succeeded' ? 'default' :
-                        run.status === 'failed' ? 'destructive' :
-                        'secondary'
-                      }>{run.status}</Badge>
+                  <div className="space-y-3 pt-3 border-t">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(run.status)}
+                      <span className="text-sm font-medium">Status:</span>
+                      <Badge variant={getStatusBadgeVariant(run.status)}>
+                        {run.status}
+                      </Badge>
+                      {run.started_at && (
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          Started: {new Date(run.started_at).toLocaleTimeString()}
+                        </span>
+                      )}
                     </div>
+
+                    {hasLogs && (
+                      <Collapsible
+                        open={expandedLogs[workflow.id]}
+                        onOpenChange={(open) => 
+                          setExpandedLogs(prev => ({ ...prev, [workflow.id]: open }))
+                        }
+                      >
+                        <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary">
+                          <List className="h-4 w-4" />
+                          Execution Log ({run.log.events?.length || 0} events)
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <ScrollArea className="h-[200px] rounded-md border p-3 bg-muted/50">
+                            <div className="space-y-2">
+                              {run.log.events?.map((event, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className="text-xs space-y-1 p-2 rounded bg-background"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {event.status === 'success' ? (
+                                      <CheckCircle className="h-3 w-3 text-green-500" />
+                                    ) : event.status === 'failed' ? (
+                                      <XCircle className="h-3 w-3 text-destructive" />
+                                    ) : null}
+                                    <span className="font-medium">{event.step}</span>
+                                    {event.timestamp && (
+                                      <span className="text-muted-foreground ml-auto">
+                                        {new Date(event.timestamp).toLocaleTimeString()}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {event.result && (
+                                    <div className="text-muted-foreground pl-5">
+                                      Result: {typeof event.result === 'string' 
+                                        ? event.result 
+                                        : JSON.stringify(event.result, null, 2)}
+                                    </div>
+                                  )}
+                                  {event.error && (
+                                    <div className="text-destructive pl-5">
+                                      Error: {event.error}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+
+                    {run.finished_at && (
+                      <div className="text-xs text-muted-foreground">
+                        Finished: {new Date(run.finished_at).toLocaleTimeString()}
+                        {run.started_at && ` (${Math.round((new Date(run.finished_at).getTime() - new Date(run.started_at).getTime()) / 1000)}s)`}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
