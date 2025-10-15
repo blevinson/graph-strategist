@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -8,6 +8,8 @@ import ReactFlow, {
   useEdgesState,
   addEdge,
   BackgroundVariant,
+  useReactFlow,
+  ReactFlowInstance,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import CustomNode from './CustomNode';
@@ -16,6 +18,7 @@ import EdgeConnectionDialog from './EdgeConnectionDialog';
 import { useState } from 'react';
 import { RelationType } from '@/types/graph';
 import { toast } from 'sonner';
+import { nodeTypeConfig } from '@/types/graph';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -27,6 +30,31 @@ export default function GraphCanvas() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
   const [pendingConnection, setPendingConnection] = useState<Connection | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const viewportRef = useRef({ x: 0, y: 0, zoom: 1 });
+
+  // Save viewport whenever it changes
+  const onMove = useCallback(() => {
+    if (reactFlowInstance) {
+      const viewport = reactFlowInstance.getViewport();
+      viewportRef.current = viewport;
+      localStorage.setItem('graph-viewport', JSON.stringify(viewport));
+    }
+  }, [reactFlowInstance]);
+
+  // Restore viewport on init
+  const onInit = useCallback((instance: ReactFlowInstance) => {
+    setReactFlowInstance(instance);
+    const savedViewport = localStorage.getItem('graph-viewport');
+    if (savedViewport && isInitialized) {
+      try {
+        const viewport = JSON.parse(savedViewport);
+        instance.setViewport(viewport);
+      } catch (e) {
+        console.error('Failed to restore viewport:', e);
+      }
+    }
+  }, [isInitialized]);
 
   useEffect(() => {
     fetchGraph().then(() => setIsInitialized(true));
@@ -102,6 +130,8 @@ export default function GraphCanvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
+        onInit={onInit}
+        onMove={onMove}
         nodeTypes={nodeTypes}
         fitView={!isInitialized}
         fitViewOptions={{ padding: 0.2 }}
@@ -135,6 +165,3 @@ export default function GraphCanvas() {
     </>
   );
 }
-
-// Import at top to avoid issues
-import { nodeTypeConfig } from '@/types/graph';
