@@ -119,7 +119,9 @@ const CustomNode = memo(({ data, id }: NodeProps<NodeData>) => {
   return (
     <div
       onClick={() => setSelectedNode(id)}
-      className="relative px-4 py-3 rounded-xl border-2 bg-card shadow-lg cursor-pointer transition-all hover:scale-105 hover:shadow-xl min-w-[180px]"
+      className={`relative px-4 py-3 rounded-xl border-2 bg-card shadow-lg cursor-pointer transition-all hover:scale-105 hover:shadow-xl min-w-[180px] ${
+        useGraphStore.getState().activeNodeId === id ? 'workflow-node-active' : ''
+      }`}
       style={{
         borderColor: config.color,
         boxShadow: `0 4px 20px ${config.color}40`,

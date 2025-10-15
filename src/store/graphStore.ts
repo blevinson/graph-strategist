@@ -11,11 +11,17 @@ interface GraphState {
   selectedNode: string | null;
   searchQuery: string;
   isLoading: boolean;
+  activeWorkflowRun: string | null;
+  activeNodeId: string | null;
+  activeEdgeIds: string[];
   
   setNodes: (nodes: Node<NodeData>[]) => void;
   setEdges: (edges: Edge<EdgeData>[]) => void;
   setSelectedNode: (nodeId: string | null) => void;
   setSearchQuery: (query: string) => void;
+  setActiveWorkflowRun: (runId: string | null) => void;
+  setActiveNodeId: (nodeId: string | null) => void;
+  setActiveEdgeIds: (edgeIds: string[]) => void;
   
   fetchGraph: () => Promise<void>;
   createNode: (nodeType: NodeType, name: string, props?: any) => Promise<string>;
@@ -27,6 +33,7 @@ interface GraphState {
   getGoalBlockers: (goalId: string) => Promise<NodeData[]>;
   getSignalImpactedGoals: (signalId: string) => Promise<NodeData[]>;
   subscribeToChanges: () => () => void;
+  subscribeToWorkflowExecution: () => () => void;
 }
 
 export const useGraphStore = create<GraphState>((set, get) => ({
@@ -35,11 +42,17 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   selectedNode: null,
   searchQuery: '',
   isLoading: false,
+  activeWorkflowRun: null,
+  activeNodeId: null,
+  activeEdgeIds: [],
 
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
   setSelectedNode: (nodeId) => set({ selectedNode: nodeId }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setActiveWorkflowRun: (runId) => set({ activeWorkflowRun: runId }),
+  setActiveNodeId: (nodeId) => set({ activeNodeId: nodeId }),
+  setActiveEdgeIds: (edgeIds) => set({ activeEdgeIds: edgeIds }),
 
   fetchGraph: async () => {
     set({ isLoading: true });
@@ -305,6 +318,71 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     return () => {
       supabase.removeChannel(nodesChannel);
       supabase.removeChannel(edgesChannel);
+    };
+  },
+
+  subscribeToWorkflowExecution: () => {
+    const workflowRunsChannel = supabase
+      .channel('workflow-execution')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'workflow_runs'
+        },
+        async (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            const run = payload.new as any;
+            if (run.status === 'running') {
+              set({ activeWorkflowRun: run.id });
+            } else if (run.status === 'succeeded' || run.status === 'failed') {
+              set({ 
+                activeWorkflowRun: null, 
+                activeNodeId: null, 
+                activeEdgeIds: [] 
+              });
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'step_runs'
+        },
+        async (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            const stepRun = payload.new as any;
+            
+            // Fetch the step config to get node_id
+            const { data: step } = await supabase
+              .from('workflow_steps')
+              .select('config')
+              .eq('id', stepRun.step_id)
+              .single();
+            
+            const config = step?.config as { node_id?: string } | null;
+            
+            if (config?.node_id && stepRun.status === 'running') {
+              set({ activeNodeId: config.node_id });
+              
+              // Find edges connected to this node
+              const edges = get().edges;
+              const connectedEdges = edges
+                .filter(e => e.source === config.node_id || e.target === config.node_id)
+                .map(e => e.id);
+              set({ activeEdgeIds: connectedEdges });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(workflowRunsChannel);
     };
   },
 }));

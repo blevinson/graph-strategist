@@ -57,6 +57,10 @@ All colors MUST be HSL.
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Workflow execution animations */
+    --workflow-pulse: 0 0 0 0 hsl(217 91% 60% / 0.7);
+    --workflow-pulse-active: 0 0 0 8px hsl(217 91% 60% / 0);
 
     --sidebar-background: 224 15% 10%;
     --sidebar-foreground: 210 40% 98%;
@@ -81,5 +85,35 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Workflow execution animations */
+  .workflow-node-active {
+    animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.7);
+  }
+
+  .workflow-edge-active {
+    animation: edge-flow 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 12px hsl(var(--primary) / 0);
+    }
+  }
+
+  @keyframes edge-flow {
+    0% {
+      stroke-dashoffset: 24;
+    }
+    100% {
+      stroke-dashoffset: 0;
+    }
   }
 }

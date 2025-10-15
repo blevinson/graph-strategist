@@ -22,16 +22,20 @@ const nodeTypes = {
 };
 
 export default function GraphCanvas() {
-  const { nodes: storeNodes, edges: storeEdges, fetchGraph, createEdge, selectedNode, deleteNode, subscribeToChanges } = useGraphStore();
+  const { nodes: storeNodes, edges: storeEdges, fetchGraph, createEdge, selectedNode, deleteNode, subscribeToChanges, subscribeToWorkflowExecution, activeEdgeIds } = useGraphStore();
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
   const [pendingConnection, setPendingConnection] = useState<Connection | null>(null);
 
   useEffect(() => {
     fetchGraph();
-    const unsubscribe = subscribeToChanges();
-    return unsubscribe;
-  }, [fetchGraph, subscribeToChanges]);
+    const unsubscribeGraph = subscribeToChanges();
+    const unsubscribeWorkflow = subscribeToWorkflowExecution();
+    return () => {
+      unsubscribeGraph();
+      unsubscribeWorkflow();
+    };
+  }, [fetchGraph, subscribeToChanges, subscribeToWorkflowExecution]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -52,8 +56,17 @@ export default function GraphCanvas() {
   }, [storeNodes, setNodes]);
 
   useEffect(() => {
-    setEdges(storeEdges);
-  }, [storeEdges, setEdges]);
+    // Apply active animation to edges
+    const updatedEdges = storeEdges.map(edge => ({
+      ...edge,
+      animated: activeEdgeIds.includes(edge.id),
+      style: {
+        ...edge.style,
+        strokeDasharray: activeEdgeIds.includes(edge.id) ? '8 4' : undefined,
+      },
+    }));
+    setEdges(updatedEdges);
+  }, [storeEdges, activeEdgeIds, setEdges]);
 
   const onConnect = useCallback((connection: Connection) => {
     setPendingConnection(connection);
