@@ -550,7 +550,7 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
         })),
         {
           role: "user",
-          content: `Node IDs created:\n${nodeIds}\n\nNow create edges to connect these nodes using create_edge with the IDs above.`
+          content: `Great! You created these nodes:\n${nodeIds}\n\n**CRITICAL: Now you MUST create the edges** to connect them based on the original user request: "${prompt}"\n\nUse create_edge({source: "id1", target: "id2", type: "triggers|depends_on|leads_to|branches_to|mitigates|uses"}) for EACH connection described in the original request.\n\nFor example, if user said "signal X triggers task Y", you MUST call create_edge with the signal's ID as source, task's ID as target, and type "triggers".`
         }
       ];
 
