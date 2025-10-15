@@ -125,7 +125,15 @@ export default function InspectorPanel() {
     );
   }
 
-  const config = nodeTypeConfig[node.data.label];
+  const typeConfig = nodeTypeConfig[node.data.label];
+  
+  // Fallback for legacy/unknown node types
+  const config = typeConfig || {
+    emoji: '❓',
+    color: 'hsl(var(--muted))',
+    label: node.data.label || 'Unknown'
+  };
+  
   const nodeEdges = edges.filter(
     (e) => e.source === node.id || e.target === node.id
   );
