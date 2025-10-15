@@ -1,1 +1,7 @@
 project_id = "aalritrcwtocwcjylyfl"
+
+[functions.graph-api]
+verify_jwt = false
+
+[functions.agent-respond]
+verify_jwt = false
