@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.strategy-agent]
 verify_jwt = false
+
+[functions.simulation-agent]
+verify_jwt = false
