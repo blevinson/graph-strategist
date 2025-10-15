@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      edges: {
+        Row: {
+          created_at: string | null
+          id: string
+          source: string
+          target: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          source: string
+          target: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          source?: string
+          target?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edges_source_fkey"
+            columns: ["source"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edges_target_fkey"
+            columns: ["target"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nodes: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string
+          props: Json
+          updated_at: string | null
+          x: number | null
+          y: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label: string
+          props?: Json
+          updated_at?: string | null
+          x?: number | null
+          y?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string
+          props?: Json
+          updated_at?: string | null
+          x?: number | null
+          y?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
