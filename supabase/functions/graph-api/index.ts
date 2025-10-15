@@ -17,10 +17,13 @@ Deno.serve(async (req) => {
     );
 
     const url = new URL(req.url);
-    const path = url.pathname.replace('/graph-api/', '');
+    const pathWithPrefix = url.pathname;
+    const path = pathWithPrefix.includes('/graph-api/') 
+      ? pathWithPrefix.split('/graph-api/')[1] 
+      : pathWithPrefix.substring(1);
     const method = req.method;
 
-    console.log(`${method} ${path}`);
+    console.log(`${method} ${path} (full path: ${pathWithPrefix})`);
 
     // GET /graph - return all nodes and edges
     if (method === 'GET' && path === 'graph') {
