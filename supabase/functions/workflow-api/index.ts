@@ -18,10 +18,13 @@ serve(async (req) => {
     );
 
     const url = new URL(req.url);
-    const path = url.pathname.replace('/workflow-api/', '');
+    // Extract path after the function name (handles /functions/v1/workflow-api/... or /workflow-api/...)
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    const functionIndex = pathParts.findIndex(p => p === 'workflow-api');
+    const path = functionIndex >= 0 ? pathParts.slice(functionIndex + 1).join('/') : '';
     const method = req.method;
 
-    console.log(`${method} ${path}`);
+    console.log(`${method} /${path}`);
 
     // GET /workflows - List all workflows
     if (method === 'GET' && path === 'workflows') {
@@ -31,6 +34,23 @@ serve(async (req) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // GET /workflows/:id - Get workflow by ID
+    if (method === 'GET' && path.match(/^workflows\/[^\/]+$/) && !path.includes('/run')) {
+      const workflowId = path.split('/')[1];
+      
+      const { data, error } = await supabase
+        .from('workflows')
+        .select('*, workflow_steps(*)')
+        .eq('id', workflowId)
+        .single();
+
+      if (error) throw error;
+
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -75,6 +95,8 @@ serve(async (req) => {
     // POST /workflows/:id/run - Trigger workflow
     if (method === 'POST' && path.match(/^workflows\/[^\/]+\/run$/)) {
       const workflowId = path.split('/')[1];
+      const body = await req.json().catch(() => ({}));
+      const meta = body.meta || {};
 
       // Create workflow run
       const { data: run, error: runError } = await supabase
@@ -82,6 +104,7 @@ serve(async (req) => {
         .insert({
           workflow_id: workflowId,
           status: 'queued',
+          meta,
           log: { events: [] }
         })
         .select()
@@ -89,8 +112,38 @@ serve(async (req) => {
 
       if (runError) throw runError;
 
-      // Trigger async execution (will be handled by workflow-runner)
+      // Trigger workflow runner
+      await supabase.functions.invoke('workflow-runner', {
+        method: 'POST'
+      });
+
       return new Response(JSON.stringify(run), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 201
+      });
+    }
+
+    // GET /runs/:id - Get workflow run with step runs
+    if (method === 'GET' && path.match(/^runs\/[^\/]+$/)) {
+      const runId = path.split('/')[1];
+
+      const { data: run, error: runError } = await supabase
+        .from('workflow_runs')
+        .select('*, workflows(name, description, mode)')
+        .eq('id', runId)
+        .single();
+
+      if (runError) throw runError;
+
+      const { data: stepRuns, error: stepRunsError } = await supabase
+        .from('step_runs')
+        .select('*, workflow_steps(name, type, config)')
+        .eq('workflow_run_id', runId)
+        .order('created_at');
+
+      if (stepRunsError) throw stepRunsError;
+
+      return new Response(JSON.stringify({ ...run, step_runs: stepRuns }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }

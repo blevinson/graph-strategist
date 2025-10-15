@@ -128,12 +128,6 @@ export function WorkflowsDrawer() {
     setSelectedWorkflow(workflowId);
 
     try {
-      const { data, error } = await supabase.functions.invoke('workflow-api', {
-        body: { path: `workflows/${workflowId}/run`, method: 'POST' }
-      });
-
-      if (error) throw error;
-
       const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
       const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -146,7 +140,10 @@ export function WorkflowsDrawer() {
         body: JSON.stringify({})
       });
 
-      if (!response.ok) throw new Error('Failed to start workflow');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to start workflow: ${errorText}`);
+      }
 
       const run = await response.json();
       setWorkflowRun(run);
