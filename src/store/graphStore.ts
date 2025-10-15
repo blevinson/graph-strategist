@@ -169,12 +169,25 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     }
   },
 
-  updateNodePosition: (id, x, y) => {
+  updateNodePosition: async (id, x, y) => {
+    // Update local state immediately
     set({
       nodes: get().nodes.map(n =>
         n.id === id ? { ...n, position: { x, y } } : n
       )
     });
+    
+    // Persist to database
+    try {
+      const { error } = await supabase
+        .from('nodes')
+        .update({ x, y })
+        .eq('id', id);
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Failed to update node position:', error);
+    }
   },
 
   deleteNode: async (id) => {
