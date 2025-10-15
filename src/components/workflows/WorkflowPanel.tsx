@@ -118,6 +118,7 @@ export default function WorkflowPanel() {
         
         if (data.status === 'succeeded') {
           toast.success('Workflow completed successfully');
+          // Graph will auto-update via real-time subscription
           return;
         } else if (data.status === 'failed') {
           toast.error('Workflow failed');

@@ -22,14 +22,16 @@ const nodeTypes = {
 };
 
 export default function GraphCanvas() {
-  const { nodes: storeNodes, edges: storeEdges, fetchGraph, createEdge, selectedNode, deleteNode } = useGraphStore();
+  const { nodes: storeNodes, edges: storeEdges, fetchGraph, createEdge, selectedNode, deleteNode, subscribeToChanges } = useGraphStore();
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
   const [pendingConnection, setPendingConnection] = useState<Connection | null>(null);
 
   useEffect(() => {
     fetchGraph();
-  }, [fetchGraph]);
+    const unsubscribe = subscribeToChanges();
+    return unsubscribe;
+  }, [fetchGraph, subscribeToChanges]);
 
   // Handle keyboard shortcuts
   useEffect(() => {

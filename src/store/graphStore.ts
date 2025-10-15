@@ -26,6 +26,7 @@ interface GraphState {
   searchNodes: (query: string) => Promise<void>;
   getGoalBlockers: (goalId: string) => Promise<NodeData[]>;
   getSignalImpactedGoals: (signalId: string) => Promise<NodeData[]>;
+  subscribeToChanges: () => () => void;
 }
 
 export const useGraphStore = create<GraphState>((set, get) => ({
@@ -268,5 +269,42 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       console.error('Failed to get signal impacted goals:', error);
       return [];
     }
+  },
+
+  subscribeToChanges: () => {
+    const nodesChannel = supabase
+      .channel('nodes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'nodes'
+        },
+        () => {
+          get().fetchGraph();
+        }
+      )
+      .subscribe();
+
+    const edgesChannel = supabase
+      .channel('edges-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'edges'
+        },
+        () => {
+          get().fetchGraph();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(nodesChannel);
+      supabase.removeChannel(edgesChannel);
+    };
   },
 }));
