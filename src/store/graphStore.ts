@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { Node, Edge } from 'reactflow';
 import { NodeData, EdgeData, NodeType, RelationType } from '@/types/graph';
-import axios from 'axios';
+import { supabase } from '@/integrations/supabase/client';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/graph-api`;
 
 interface GraphState {
   nodes: Node<NodeData>[];
@@ -43,8 +43,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   fetchGraph: async () => {
     set({ isLoading: true });
     try {
-      const response = await axios.get(`${API_BASE}/graph`);
-      const { nodes, edges } = response.data;
+      const { data, error } = await supabase.functions.invoke('graph-api/graph');
+      
+      if (error) throw error;
+      
+      const { nodes, edges } = data;
       
       set({
         nodes: nodes.map((n: NodeData) => ({
@@ -72,12 +75,14 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   createNode: async (nodeType, name, props = {}) => {
     try {
-      const response = await axios.post(`${API_BASE}/nodes`, {
-        label: nodeType,
-        props: { name, ...props },
+      const { data, error } = await supabase.functions.invoke('graph-api/nodes', {
+        body: { label: nodeType, props: { name, ...props } },
+        method: 'POST'
       });
       
-      const newNode = response.data;
+      if (error) throw error;
+      
+      const newNode = data;
       const node: Node<NodeData> = {
         id: newNode.id,
         type: 'custom',
@@ -94,7 +99,12 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   updateNode: async (id, props) => {
     try {
-      await axios.patch(`${API_BASE}/nodes/${id}`, { props });
+      const { error } = await supabase.functions.invoke(`graph-api/nodes/${id}`, {
+        body: { props },
+        method: 'PATCH'
+      });
+      
+      if (error) throw error;
       
       const nodes = get().nodes.map((node) =>
         node.id === id
@@ -111,7 +121,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   deleteNode: async (id) => {
     try {
-      await axios.delete(`${API_BASE}/nodes/${id}`);
+      const { error } = await supabase.functions.invoke(`graph-api/nodes/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (error) throw error;
       
       set({
         nodes: get().nodes.filter((node) => node.id !== id),
@@ -126,13 +140,14 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   createEdge: async (source, target, type) => {
     try {
-      const response = await axios.post(`${API_BASE}/edges`, {
-        source,
-        target,
-        type,
+      const { data, error } = await supabase.functions.invoke('graph-api/edges', {
+        body: { source, target, type },
+        method: 'POST'
       });
       
-      const newEdge = response.data;
+      if (error) throw error;
+      
+      const newEdge = data;
       const edge: Edge<EdgeData> = {
         id: newEdge.id,
         source: newEdge.source,
@@ -152,7 +167,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   deleteEdge: async (edgeId) => {
     try {
-      await axios.delete(`${API_BASE}/edges/${edgeId}`);
+      const { error } = await supabase.functions.invoke(`graph-api/edges/${edgeId}`, {
+        method: 'DELETE'
+      });
+      
+      if (error) throw error;
       set({ edges: get().edges.filter((edge) => edge.id !== edgeId) });
     } catch (error) {
       console.error('Failed to delete edge:', error);
@@ -167,11 +186,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     }
     
     try {
-      const response = await axios.get(`${API_BASE}/search`, {
-        params: { q: query },
-      });
+      const { data, error } = await supabase.functions.invoke(`graph-api/search?q=${encodeURIComponent(query)}`);
       
-      const nodes = response.data;
+      if (error) throw error;
+      
+      const nodes = data;
       set({
         nodes: nodes.map((n: NodeData) => ({
           id: n.id,
@@ -187,8 +206,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   getGoalBlockers: async (goalId) => {
     try {
-      const response = await axios.get(`${API_BASE}/goals/${goalId}/blockers`);
-      return response.data;
+      const { data, error } = await supabase.functions.invoke(`graph-api/goals/${goalId}/blockers`);
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Failed to get goal blockers:', error);
       return [];
@@ -197,8 +217,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   getSignalImpactedGoals: async (signalId) => {
     try {
-      const response = await axios.get(`${API_BASE}/signals/${signalId}/impacted-goals`);
-      return response.data;
+      const { data, error } = await supabase.functions.invoke(`graph-api/signals/${signalId}/impacted-goals`);
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Failed to get signal impacted goals:', error);
       return [];

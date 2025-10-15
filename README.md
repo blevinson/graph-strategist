@@ -1,6 +1,6 @@
 # Strategic Graph Orchestrator
 
-A full-stack strategic planning and orchestration platform with React Flow visualization, FastAPI backend, and Neo4j graph database.
+A full-stack strategic planning and orchestration platform with React Flow visualization powered by Lovable Cloud.
 
 ## 🎯 Features
 
@@ -13,67 +13,36 @@ A full-stack strategic planning and orchestration platform with React Flow visua
   - View risks blocking goals
   - View goals impacted by signals
 - **Real-time Updates**: Instant UI refresh after CRUD operations
-- **Persistent Graph Database**: Neo4j stores your strategic model
+- **Cloud-Powered Backend**: Lovable Cloud provides database and APIs automatically
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### No Setup Required!
 
-- Docker & Docker Compose
-- Node.js 20+ (for local development)
+The application is powered by **Lovable Cloud** - everything is automatically configured:
 
-### Run with Docker Compose
+✅ PostgreSQL database with nodes and edges tables  
+✅ Backend APIs for all graph operations  
+✅ Real-time updates across all operations  
+✅ No Docker or local setup needed
 
-1. **Clone and start all services:**
-
-```bash
-docker compose up --build
-```
-
-This starts:
-- **Neo4j** at http://localhost:7474 (browser UI)
-- **FastAPI** at http://localhost:8000 (API docs at /docs)
-- **React Frontend** at http://localhost:8080
-
-2. **Access the app:**
-
-Open http://localhost:8080 in your browser
-
-### Local Development (Frontend Only)
-
-If you want to run the frontend locally while using Docker for backend:
-
-```bash
-# Start only backend services
-docker compose up neo4j backend
-
-# In another terminal, run frontend locally
-npm install
-npm run dev
-```
-
-Create a `.env.local` file:
-```
-VITE_API_URL=http://localhost:8000
-```
+Simply open the app in Lovable and start creating your strategic graph!
 
 ## 📦 Project Structure
 
 ```
 strategic-graph-orchestrator/
-├── backend/               # FastAPI application
-│   ├── main.py           # API routes and Neo4j queries
-│   ├── requirements.txt  # Python dependencies
-│   └── Dockerfile
-├── src/                  # React frontend
-│   ├── components/       # UI components
-│   │   ├── graph/       # React Flow canvas & nodes
-│   │   ├── inspector/   # Inspector panel
-│   │   └── toolbar/     # Search & FAB
-│   ├── store/           # Zustand state management
-│   ├── types/           # TypeScript types
-│   └── pages/           # Main page
-├── docker-compose.yml    # Multi-service orchestration
+├── src/                     # React frontend
+│   ├── components/          # UI components
+│   │   ├── graph/          # React Flow canvas & nodes
+│   │   ├── inspector/      # Inspector panel
+│   │   └── toolbar/        # Search & FAB
+│   ├── store/              # Zustand state management
+│   ├── types/              # TypeScript types
+│   └── pages/              # Main page
+├── supabase/
+│   └── functions/
+│       └── graph-api/      # Edge function for backend APIs
 └── README.md
 ```
 
@@ -82,14 +51,14 @@ strategic-graph-orchestrator/
 ### Creating Nodes
 
 1. Click the **+** button (bottom-right)
-2. Select node type
-3. Enter name and optional properties
+2. Select node type (Goal, Task, Agent, etc.)
+3. Enter name and optional properties (status, priority)
 4. Click "Create Node"
 
 ### Creating Relationships
 
 1. Drag from a node's bottom handle to another node's top handle
-2. Select relationship type in the dialog
+2. Select relationship type in the dialog (DEPENDS_ON, BLOCKS, TRIGGERS, etc.)
 3. Click "Create"
 
 ### Inspecting Nodes
@@ -102,47 +71,71 @@ strategic-graph-orchestrator/
 
 ### Searching
 
-Use the search bar at the top to filter nodes by name or description
+Use the search bar at the top to filter nodes by name or description in real-time
 
 ## 🔧 API Endpoints
 
-- `GET /graph` - Get all nodes and edges
-- `POST /nodes` - Create node
-- `PATCH /nodes/{id}` - Update node
-- `DELETE /nodes/{id}` - Delete node
-- `POST /edges` - Create edge
-- `DELETE /edges/{id}` - Delete edge
-- `GET /goals/{id}/blockers` - Get risks blocking a goal
-- `GET /signals/{id}/impacted-goals` - Get goals triggered by signal
-- `GET /search?q=` - Search nodes
+All endpoints are handled through the `graph-api` Edge Function:
 
-Full API documentation: http://localhost:8000/docs
+- `GET /graph-api/graph` - Get all nodes and edges
+- `POST /graph-api/nodes` - Create node
+- `PATCH /graph-api/nodes/{id}` - Update node
+- `DELETE /graph-api/nodes/{id}` - Delete node
+- `POST /graph-api/edges` - Create edge
+- `DELETE /graph-api/edges/{id}` - Delete edge
+- `GET /graph-api/goals/{id}/blockers` - Get risks blocking a goal
+- `GET /graph-api/signals/{id}/impacted-goals` - Get goals triggered by signal
+- `GET /graph-api/search?q=` - Search nodes
 
 ## 🗄️ Database
 
-Neo4j browser UI: http://localhost:7474
+The app uses PostgreSQL tables managed by Lovable Cloud:
 
-Default credentials:
-- Username: `neo4j`
-- Password: `neo4j_password_change_me`
+### Tables
 
-**Change the password** in `docker-compose.yml` and `backend/.env` for production!
+**nodes** - Stores all graph nodes
+- `id` (UUID): Unique identifier
+- `label` (TEXT): Node type (goal, task, agent, decision, capability, risk, signal)
+- `props` (JSONB): Node properties (name, status, priority, description, etc.)
+- `x`, `y` (FLOAT): Canvas position coordinates
+- `created_at`, `updated_at` (TIMESTAMP): Timestamps
 
-## 🎯 Example Cypher Queries
+**edges** - Stores relationships between nodes
+- `id` (UUID): Unique identifier
+- `source` (UUID): Source node ID (foreign key to nodes)
+- `target` (UUID): Target node ID (foreign key to nodes)
+- `type` (TEXT): Relationship type (DEPENDS_ON, ALIGNS_WITH, BLOCKS, ASSIGNED_TO, TRIGGERS, PRODUCES, MITIGATES)
+- `created_at` (TIMESTAMP): Creation timestamp
 
-```cypher
-// View all goals and their blockers
-MATCH (g:Goal)<-[:BLOCKS]-(r:Risk)
-RETURN g.name, collect(r.name) as blockers
+### Example Queries
 
-// Find critical path (goals with most dependencies)
-MATCH (g:Goal)<-[:DEPENDS_ON*]-(n)
-RETURN g.name, count(n) as dependencies
-ORDER BY dependencies DESC
+You can query the database directly through Lovable Cloud:
 
-// View signals and triggered goals
-MATCH (s:Signal)-[:TRIGGERS]->(g:Goal)
-RETURN s.name, collect(g.name) as triggered_goals
+```sql
+-- View all goals
+SELECT * FROM nodes WHERE label = 'goal';
+
+-- Find risks blocking goals
+SELECT 
+  n1.props->>'name' as risk,
+  n2.props->>'name' as goal
+FROM edges e
+JOIN nodes n1 ON e.source = n1.id
+JOIN nodes n2 ON e.target = n2.id
+WHERE e.type = 'BLOCKS' 
+  AND n1.label = 'risk' 
+  AND n2.label = 'goal';
+
+-- Find signals triggering goals
+SELECT 
+  n1.props->>'name' as signal,
+  n2.props->>'name' as goal
+FROM edges e
+JOIN nodes n1 ON e.source = n1.id
+JOIN nodes n2 ON e.target = n2.id
+WHERE e.type = 'TRIGGERS'
+  AND n1.label = 'signal'
+  AND n2.label = 'goal';
 ```
 
 ## 🛠️ Tech Stack
@@ -150,42 +143,48 @@ RETURN s.name, collect(g.name) as triggered_goals
 ### Frontend
 - React 18 + TypeScript
 - React Flow (graph visualization)
-- Tailwind CSS (styling)
+- Tailwind CSS (styling with custom design tokens)
 - Zustand (state management)
-- Axios (API client)
 - Shadcn UI (components)
+- Sonner (toast notifications)
 
 ### Backend
-- FastAPI (Python web framework)
-- Neo4j Python Driver
-- Pydantic (data validation)
+- Lovable Cloud (Supabase-powered)
+- PostgreSQL database
+- Edge Functions (Deno runtime)
+- Row Level Security (RLS) policies
 
-### Infrastructure
-- Docker & Docker Compose
-- Neo4j 5.15 Community with APOC plugin
+## 🎯 Strategic Entities
 
-## 📝 Environment Variables
+### Node Types
+- **Goal** ⭐ - Strategic objectives
+- **Task** ⚙️ - Actionable work items
+- **Agent** 🤖 - Resources or team members
+- **Decision** 📄 - Key decisions and choices
+- **Capability** ⚡ - Skills, tools, or resources
+- **Risk** ⚠️ - Potential blockers or issues
+- **Signal** 🔔 - Triggers or events
 
-### Backend
-```
-NEO4J_URI=bolt://neo4j:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=neo4j_password_change_me
-```
+### Relationship Types
+- **DEPENDS_ON** - Task/goal dependencies
+- **ALIGNS_WITH** - Strategic alignment
+- **BLOCKS** - Risks blocking goals
+- **ASSIGNED_TO** - Task assignments
+- **TRIGGERS** - Signals triggering actions
+- **PRODUCES** - Output relationships
+- **MITIGATES** - Risk mitigation
 
-### Frontend
-```
-VITE_API_URL=http://localhost:8000
-```
+## 📝 Development
 
-## 🚢 Production Deployment
+The app runs in Lovable's development environment with hot-reload enabled. Changes to the code are reflected immediately in the preview window.
 
-1. **Update credentials** in docker-compose.yml
-2. **Set secure passwords** for Neo4j
-3. **Configure CORS** in backend/main.py
-4. **Use environment-specific .env files**
-5. **Set up reverse proxy** (nginx/Traefik) for HTTPS
-6. **Configure Neo4j** for production workloads
+### Backend Management
+
+Access your backend through Lovable Cloud:
+- View and manage database tables
+- Monitor Edge Function logs
+- Configure authentication (if needed)
+- Manage storage buckets (if needed)
 
 ## 📄 License
 
@@ -193,4 +192,4 @@ MIT License - feel free to use this for your strategic planning needs!
 
 ## 🙏 Credits
 
-Built with React Flow, FastAPI, and Neo4j for strategic orchestration and dependency modeling.
+Built with React Flow and Lovable Cloud for strategic orchestration and dependency modeling.
