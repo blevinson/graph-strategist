@@ -22,7 +22,7 @@ const nodeTypes = {
 };
 
 export default function GraphCanvas() {
-  const { nodes: storeNodes, edges: storeEdges, fetchGraph, createEdge } = useGraphStore();
+  const { nodes: storeNodes, edges: storeEdges, fetchGraph, createEdge, selectedNode, deleteNode } = useGraphStore();
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
   const [pendingConnection, setPendingConnection] = useState<Connection | null>(null);
@@ -30,6 +30,20 @@ export default function GraphCanvas() {
   useEffect(() => {
     fetchGraph();
   }, [fetchGraph]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNode) {
+        event.preventDefault();
+        deleteNode(selectedNode);
+        toast.success('Node deleted');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedNode, deleteNode]);
 
   useEffect(() => {
     setNodes(storeNodes);
