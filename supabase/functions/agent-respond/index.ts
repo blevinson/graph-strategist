@@ -487,7 +487,7 @@ Be friendly and always create complete, connected workflows!`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'google/gemini-2.5-flash',
         messages,
         tools,
         tool_choice: { type: "auto" }
