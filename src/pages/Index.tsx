@@ -65,7 +65,7 @@ const Index = () => {
                   <NodePalette />
                 </div>
               </TabsContent>
-              <TabsContent value="copilot" className="flex-1 m-0 flex flex-col">
+              <TabsContent value="copilot" className="flex-1 m-0 h-full">
                 <CoPilotChat />
               </TabsContent>
             </Tabs>
