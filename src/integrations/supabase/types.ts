@@ -83,12 +83,64 @@ export type Database = {
         }
         Relationships: []
       }
+      step_runs: {
+        Row: {
+          created_at: string
+          finished_at: string | null
+          id: string
+          log: Json
+          output: Json | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["workflow_run_status"]
+          step_id: string
+          workflow_run_id: string
+        }
+        Insert: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          log?: Json
+          output?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          step_id: string
+          workflow_run_id: string
+        }
+        Update: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          log?: Json
+          output?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          step_id?: string
+          workflow_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "step_runs_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "step_runs_workflow_run_id_fkey"
+            columns: ["workflow_run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_runs: {
         Row: {
           created_at: string
           finished_at: string | null
           id: string
           log: Json
+          meta: Json | null
           started_at: string | null
           status: Database["public"]["Enums"]["workflow_run_status"]
           workflow_id: string
@@ -98,6 +150,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           log?: Json
+          meta?: Json | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["workflow_run_status"]
           workflow_id: string
@@ -107,6 +160,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           log?: Json
+          meta?: Json | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["workflow_run_status"]
           workflow_id?: string
@@ -128,6 +182,7 @@ export type Database = {
           depends_on: string[] | null
           id: string
           name: string
+          position: number | null
           type: Database["public"]["Enums"]["workflow_step_type"]
           workflow_id: string
         }
@@ -137,6 +192,7 @@ export type Database = {
           depends_on?: string[] | null
           id?: string
           name: string
+          position?: number | null
           type: Database["public"]["Enums"]["workflow_step_type"]
           workflow_id: string
         }
@@ -146,6 +202,7 @@ export type Database = {
           depends_on?: string[] | null
           id?: string
           name?: string
+          position?: number | null
           type?: Database["public"]["Enums"]["workflow_step_type"]
           workflow_id?: string
         }
@@ -162,6 +219,7 @@ export type Database = {
       workflows: {
         Row: {
           created_at: string
+          description: string | null
           id: string
           mode: Database["public"]["Enums"]["workflow_mode"]
           name: string
@@ -170,6 +228,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["workflow_mode"]
           name: string
@@ -178,6 +237,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["workflow_mode"]
           name?: string
@@ -216,6 +276,7 @@ export type Database = {
         | "CREATE_EDGE"
         | "DELETE_EDGE"
         | "SQL_QUERY"
+        | "EMIT_SIGNAL"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -358,6 +419,7 @@ export const Constants = {
         "CREATE_EDGE",
         "DELETE_EDGE",
         "SQL_QUERY",
+        "EMIT_SIGNAL",
       ],
     },
   },
