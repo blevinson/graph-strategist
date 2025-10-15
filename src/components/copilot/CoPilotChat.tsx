@@ -103,7 +103,7 @@ export const CoPilotChat = () => {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
