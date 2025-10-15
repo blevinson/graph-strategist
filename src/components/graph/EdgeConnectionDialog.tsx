@@ -28,7 +28,7 @@ export default function EdgeConnectionDialog({
   onClose,
   onConfirm,
 }: EdgeConnectionDialogProps) {
-  const [selectedType, setSelectedType] = useState<RelationType>('DEPENDS_ON');
+  const [selectedType, setSelectedType] = useState<RelationType>('depends_on');
 
   const handleConfirm = () => {
     onConfirm(selectedType);

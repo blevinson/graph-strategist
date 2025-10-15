@@ -12,5 +12,8 @@ verify_jwt = false
 [functions.workflow-runner]
 verify_jwt = false
 
+[functions.agent-respond-simulation]
+verify_jwt = false
+
 [functions.strategy-agent]
 verify_jwt = false

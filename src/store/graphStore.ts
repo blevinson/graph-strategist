@@ -5,6 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/graph-api`;
 
+interface SimulationResult {
+  timestamp: string;
+  status: string;
+  rationale: string;
+  deltas?: any;
+}
+
 interface GraphState {
   nodes: Node<NodeData>[];
   edges: Edge<EdgeData>[];
@@ -14,6 +21,8 @@ interface GraphState {
   activeWorkflowRun: string | null;
   activeNodeId: string | null;
   activeEdgeIds: string[];
+  simulationHistory: SimulationResult[];
+  simulationStatus: string | null;
   
   setNodes: (nodes: Node<NodeData>[]) => void;
   setEdges: (edges: Edge<EdgeData>[]) => void;
@@ -32,9 +41,12 @@ interface GraphState {
   searchNodes: (query: string) => Promise<void>;
   getGoalBlockers: (goalId: string) => Promise<NodeData[]>;
   getSignalImpactedGoals: (signalId: string) => Promise<NodeData[]>;
+  runSimulation: () => Promise<void>;
   subscribeToChanges: () => () => void;
   subscribeToWorkflowExecution: () => () => void;
 }
+
+const SIMULATION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-respond-simulation`;
 
 export const useGraphStore = create<GraphState>((set, get) => ({
   nodes: [],
@@ -45,6 +57,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   activeWorkflowRun: null,
   activeNodeId: null,
   activeEdgeIds: [],
+  simulationHistory: [],
+  simulationStatus: null,
 
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
@@ -319,6 +333,73 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       supabase.removeChannel(nodesChannel);
       supabase.removeChannel(edgesChannel);
     };
+  },
+
+  runSimulation: async () => {
+    try {
+      set({ simulationStatus: 'running' });
+      
+      const state = get();
+      const graphData = {
+        nodes: state.nodes.map(n => n.data),
+        edges: state.edges.map(e => e.data),
+      };
+
+      const response = await fetch(SIMULATION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({
+          planId: 'default',
+          command: 'SIMULATE_ONCE',
+          graph: graphData,
+          context: {
+            timestamp: new Date().toISOString(),
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Simulation failed');
+      }
+
+      const result = await response.json();
+      
+      // Add to history
+      const simulationResult: SimulationResult = {
+        timestamp: new Date().toISOString(),
+        status: 'completed',
+        rationale: result.trace?.[0]?.content || 'Simulation complete',
+        deltas: result.deltas,
+      };
+      
+      set({
+        simulationHistory: [simulationResult, ...get().simulationHistory],
+        simulationStatus: null,
+      });
+
+      // Apply deltas if any
+      if (result.deltas?.nodes) {
+        await get().fetchGraph();
+      }
+    } catch (error) {
+      console.error('Simulation error:', error);
+      set({
+        simulationHistory: [
+          {
+            timestamp: new Date().toISOString(),
+            status: 'failed',
+            rationale: error instanceof Error ? error.message : 'Unknown error',
+          },
+          ...get().simulationHistory,
+        ],
+        simulationStatus: null,
+      });
+      throw error;
+    }
   },
 
   subscribeToWorkflowExecution: () => {

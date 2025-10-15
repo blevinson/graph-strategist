@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          plan_id: string | null
           source: string
           target: string
           type: string
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          plan_id?: string | null
           source: string
           target: string
           type: string
@@ -32,11 +34,19 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          plan_id?: string | null
           source?: string
           target?: string
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "edges_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "edges_source_fkey"
             columns: ["source"]
@@ -61,6 +71,7 @@ export type Database = {
           inputs: Json | null
           label: string
           outputs: Json | null
+          plan_id: string | null
           props: Json
           updated_at: string | null
           x: number | null
@@ -73,6 +84,7 @@ export type Database = {
           inputs?: Json | null
           label: string
           outputs?: Json | null
+          plan_id?: string | null
           props?: Json
           updated_at?: string | null
           x?: number | null
@@ -85,12 +97,86 @@ export type Database = {
           inputs?: Json | null
           label?: string
           outputs?: Json | null
+          plan_id?: string | null
           props?: Json
           updated_at?: string | null
           x?: number | null
           y?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "nodes_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id?: string | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string | null
+          version?: number
+        }
         Relationships: []
+      }
+      runs: {
+        Row: {
+          created_at: string
+          deltas: Json
+          id: string
+          plan_id: string
+          status: string
+          trace: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deltas?: Json
+          id?: string
+          plan_id: string
+          status?: string
+          trace?: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deltas?: Json
+          id?: string
+          plan_id?: string
+          status?: string
+          trace?: Json
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runs_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       step_runs: {
         Row: {

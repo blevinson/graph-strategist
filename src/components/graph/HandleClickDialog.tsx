@@ -21,14 +21,14 @@ export default function HandleClickDialog({
 }: HandleClickDialogProps) {
   const [nodeType, setNodeType] = useState<NodeType>('task');
   const [nodeName, setNodeName] = useState('');
-  const [relationType, setRelationType] = useState<RelationType>('DEPENDS_ON');
+  const [relationType, setRelationType] = useState<RelationType>('depends_on');
 
   const handleConfirm = () => {
     if (!nodeName.trim()) return;
     onConfirm(nodeType, nodeName.trim(), relationType);
     setNodeName('');
     setNodeType('task');
-    setRelationType('DEPENDS_ON');
+    setRelationType('depends_on');
   };
 
   return (

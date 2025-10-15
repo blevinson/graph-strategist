@@ -26,7 +26,7 @@ All colors MUST be HSL.
     --muted: 224 15% 18%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 217 91% 60%;
+    --accent: 280 80% 65%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84% 60%;
@@ -38,14 +38,15 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
-    /* Node type colors */
-    --node-goal: 45 93% 58%;
-    --node-task: 217 91% 60%;
-    --node-agent: 271 81% 56%;
-    --node-decision: 142 71% 45%;
-    --node-capability: 48 96% 53%;
-    --node-risk: 0 84% 60%;
-    --node-signal: 189 94% 43%;
+    /* Node type colors - Consumer-friendly palette */
+    --node-goal: 48 96% 55%;      /* ⭐ Gold */
+    --node-task: 217 91% 60%;     /* ⚙️ Blue */
+    --node-decision: 280 80% 65%; /* 🔀 Purple */
+    --node-signal: 30 100% 50%;   /* 🔔 Orange */
+    --node-outcome: 142 76% 36%;  /* ✅ Green */
+    --node-risk: 0 84% 60%;       /* ⚠️ Red */
+    --node-agent: 262 83% 58%;    /* 🤖 Indigo */
+    --node-tool: 200 90% 50%;     /* 🧰 Cyan */
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(271 81% 56%));

@@ -1,20 +1,20 @@
 export type NodeType = 
-  | 'goal' 
-  | 'task' 
-  | 'agent' 
-  | 'decision' 
-  | 'capability' 
-  | 'risk' 
-  | 'signal';
+  | 'goal'      // ⭐ What the user wants
+  | 'task'      // ⚙️ Step to reach goal
+  | 'decision'  // 🔀 Branch point
+  | 'signal'    // 🔔 Trigger/condition
+  | 'outcome'   // ✅ Result/milestone
+  | 'risk'      // ⚠️ Potential problem
+  | 'agent'     // 🤖 AI helper
+  | 'tool';     // 🧰 Connected app/service
 
 export type RelationType =
-  | 'DEPENDS_ON'
-  | 'ALIGNS_WITH'
-  | 'BLOCKS'
-  | 'ASSIGNED_TO'
-  | 'TRIGGERS'
-  | 'PRODUCES'
-  | 'MITIGATES';
+  | 'depends_on'    // Task → Task/Goal
+  | 'leads_to'      // Task → Outcome
+  | 'triggers'      // Signal → Task/Agent/Decision
+  | 'branches_to'   // Decision → Task/Outcome
+  | 'mitigates'     // Task → Risk
+  | 'uses';         // Task/Agent → Tool
 
 export interface NodeData {
   id: string;
@@ -42,19 +42,19 @@ export interface EdgeData {
 export const nodeTypeConfig = {
   goal: { emoji: '⭐', color: 'hsl(var(--node-goal))', label: 'Goal' },
   task: { emoji: '⚙️', color: 'hsl(var(--node-task))', label: 'Task' },
-  agent: { emoji: '🤖', color: 'hsl(var(--node-agent))', label: 'Agent' },
-  decision: { emoji: '📄', color: 'hsl(var(--node-decision))', label: 'Decision' },
-  capability: { emoji: '⚡', color: 'hsl(var(--node-capability))', label: 'Capability' },
-  risk: { emoji: '⚠️', color: 'hsl(var(--node-risk))', label: 'Risk' },
+  decision: { emoji: '🔀', color: 'hsl(var(--node-decision))', label: 'Decision' },
   signal: { emoji: '🔔', color: 'hsl(var(--node-signal))', label: 'Signal' },
+  outcome: { emoji: '✅', color: 'hsl(var(--node-outcome))', label: 'Outcome' },
+  risk: { emoji: '⚠️', color: 'hsl(var(--node-risk))', label: 'Risk' },
+  agent: { emoji: '🤖', color: 'hsl(var(--node-agent))', label: 'Agent' },
+  tool: { emoji: '🧰', color: 'hsl(var(--node-tool))', label: 'Tool' },
 };
 
 export const relationTypeConfig: Record<RelationType, { label: string; color: string }> = {
-  DEPENDS_ON: { label: 'Depends On', color: '#60a5fa' },
-  ALIGNS_WITH: { label: 'Aligns With', color: '#34d399' },
-  BLOCKS: { label: 'Blocks', color: '#f87171' },
-  ASSIGNED_TO: { label: 'Assigned To', color: '#a78bfa' },
-  TRIGGERS: { label: 'Triggers', color: '#fbbf24' },
-  PRODUCES: { label: 'Produces', color: '#2dd4bf' },
-  MITIGATES: { label: 'Mitigates', color: '#fb923c' },
+  depends_on: { label: 'Depends On', color: '#60a5fa' },
+  leads_to: { label: 'Leads To', color: '#34d399' },
+  triggers: { label: 'Triggers', color: '#fbbf24' },
+  branches_to: { label: 'Branches To', color: '#a78bfa' },
+  mitigates: { label: 'Mitigates', color: '#fb923c' },
+  uses: { label: 'Uses', color: '#2dd4bf' },
 };
