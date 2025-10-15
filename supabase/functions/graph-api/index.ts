@@ -165,15 +165,16 @@ Deno.serve(async (req) => {
     if (method === 'GET' && path.match(/^goals\/.+\/blockers$/)) {
       const goalId = path.split('/')[1];
 
-      const { data, error } = await supabase
+      // Find tasks that mitigate risks, which are connected to this goal
+      const { data: riskEdges, error: riskError } = await supabase
         .from('edges')
-        .select('source, nodes!edges_source_fkey(*)')
+        .select('source, target, nodes!edges_source_fkey(*)')
         .eq('target', goalId)
-        .eq('type', 'BLOCKS');
+        .eq('type', 'depends_on');
 
-      if (error) throw error;
+      if (riskError) throw riskError;
 
-      const blockers = data
+      const blockers = riskEdges
         .filter((e: any) => e.nodes?.label === 'risk')
         .map((e: any) => ({
           id: e.nodes.id,
@@ -195,7 +196,7 @@ Deno.serve(async (req) => {
         .from('edges')
         .select('target, nodes!edges_target_fkey(*)')
         .eq('source', signalId)
-        .eq('type', 'TRIGGERS');
+        .eq('type', 'triggers');
 
       if (error) throw error;
 

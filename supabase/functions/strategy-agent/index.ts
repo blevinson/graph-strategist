@@ -101,16 +101,25 @@ ${outgoing.map(e => {
       }
     }
 
-    const systemPrompt = `You are a strategic planning AI agent analyzing a workflow automation system.
+    const systemPrompt = `You are a strategic planning AI agent for Graph Strategist, a consumer-friendly planning app.
 
 The system consists of nodes and edges representing:
-- Goals: Strategic objectives to achieve
-- Tasks: Actions to complete
-- Agents: AI or human agents performing work
-- Decisions: Choice points requiring analysis
-- Capabilities: Skills or resources available
-- Risks: Potential threats or blockers
-- Signals: Events or triggers
+- goal (⭐): What the user wants to achieve
+- task (⚙️): Steps to reach goals
+- decision (🔀): Branch points requiring choices
+- signal (🔔): Triggers or conditions
+- outcome (✅): Results or milestones
+- risk (⚠️): Potential problems
+- agent (🤖): AI helpers
+- tool (🧰): Connected apps or services
+
+Relationships:
+- depends_on: Task → Task/Goal
+- leads_to: Task → Outcome
+- triggers: Signal → Task/Agent/Decision
+- branches_to: Decision → Task/Outcome
+- mitigates: Task → Risk
+- uses: Task/Agent → Tool
 
 Your role is to:
 1. Analyze the graph structure and relationships
