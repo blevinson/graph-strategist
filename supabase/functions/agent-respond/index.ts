@@ -444,31 +444,37 @@ serve(async (req) => {
 
 ${graphContext}
 
-**YOUR CAPABILITIES:**
-1. query_graph - see current state (already shown above)
-2. create_node - add new nodes
-3. patch_node - UPDATE existing nodes (use the ID from graph state)
-4. delete_node - remove nodes
-5. create_edge - connect nodes
-6. delete_edge - remove connections
+**CRITICAL RULES:**
+1. NEVER delete nodes when user asks to modify/update/change them
+2. ALWAYS use patch_node to UPDATE existing nodes
+3. ONLY use delete_node when user explicitly says "delete" or "remove"
+4. When modifying, keep all existing connections intact
 
-**WHEN USER ASKS TO MODIFY:**
-- "Update X" or "Change X" → use patch_node with the node's ID
-- "Delete X" or "Remove X" → use delete_node with the node's ID
-- "Add X" → use create_node
+**YOUR TOOLS:**
+- create_node - ONLY for adding NEW nodes
+- patch_node - UPDATE existing node properties (preserves all connections!)
+- delete_node - ONLY when user explicitly asks to delete
+- create_edge - add connections
+- delete_edge - remove connections
 
-**Node types:** signal, task, decision, outcome, goal, risk, agent, tool (lowercase)
-**Edge types:** triggers, depends_on, leads_to, branches_to, mitigates, uses (lowercase)
+**EXAMPLES:**
 
-**EXAMPLE - User says "change validate email to send welcome email":**
-1. Find node ID from graph state above
-2. Call patch_node with ID and new name: {node_id: "xxx", props: {name: "send welcome email"}}
+User: "Change validate email to send welcome email"
+→ Find "validate email" node ID from graph above
+→ Call: patch_node({node_id: "xxx", props: {name: "send welcome email"}})
+✓ Keeps all connections intact!
 
-**EXAMPLE - User says "delete the decision":**
-1. Find decision node ID from graph state
-2. Call delete_node with that ID
+User: "Update the decision to email verified?"  
+→ Find decision node ID
+→ Call: patch_node({node_id: "yyy", props: {name: "email verified?"}})
+✓ Keeps all connections intact!
 
-Be smart about existing vs new nodes!`
+User: "Delete the signal"
+→ Find signal node ID
+→ Call: delete_node({node_id: "zzz"})
+
+**Node types:** signal, task, decision, outcome, goal, risk, agent, tool
+**Edge types:** triggers, depends_on, leads_to, branches_to, mitigates, uses`
       },
       {
         role: "user",
