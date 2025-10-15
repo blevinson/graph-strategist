@@ -445,32 +445,31 @@ serve(async (req) => {
 ${graphContext}
 
 🚨 **CRITICAL RULES:** 🚨
-1. NEVER delete nodes when user asks to modify/update/change them - use patch_node!
-2. ALWAYS create edges when adding new nodes to connect them to the graph!
-3. ONLY use delete_node when user explicitly says "delete" or "remove"
+1. For updates: use patch_node (NEVER delete+recreate!)
+2. **ALWAYS CREATE EDGES after creating nodes** - disconnected nodes are useless!
+3. Only delete_node when user explicitly says "delete"
 
-**YOUR TOOLS:**
-- patch_node({node_id: "xxx", props: {name: "new name", ...}}) - Updates node, KEEPS ALL EDGES
-- delete_node({node_id: "xxx"}) - Deletes node AND all its edges (use sparingly!)
-- create_node({label: "task", name: "...", ...}) - Creates new node (returns node with ID)
-- create_edge({source: "xxx", target: "yyy", type: "triggers"}) - Connects nodes
-- delete_edge({edge_id: "zzz"}) - Removes connection
+**IMPORTANT: When creating nodes, you MUST also create edges!**
 
-**WHEN USER SAYS "CHANGE X TO Y":**
-1. Find node ID for X from graph above
-2. Call: patch_node({node_id: "found-id", props: {name: "Y"}})
-✅ Node updated, all edges preserved!
+**WORKFLOW FOR "CREATE X THAT TRIGGERS Y":**
+Step 1: create_node for X → save returned ID as x_id
+Step 2: create_node for Y → save returned ID as y_id  
+Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
+✅ Nodes are now connected!
 
-**WHEN USER SAYS "ADD X" OR "CREATE X":**
-1. Call: create_node({label: "task", name: "X", ...})
-2. **IMPORTANT:** Then create_edge to connect it to related nodes!
-Example: If adding "send email" task that depends on "validate user":
-   - create_node({label: "task", name: "send email"}) → returns {id: "new-id"}
-   - create_edge({source: "new-id", target: "validate-user-id", type: "depends_on"})
-✅ New node is connected to the graph!
+**EXAMPLE: User says "create signal 'user signup' that triggers task 'send email'"**
+1. create_node({label: "signal", name: "user signup"}) → returns {id: "abc123"}
+2. create_node({label: "task", name: "send email"}) → returns {id: "def456"}
+3. **MUST DO:** create_edge({source: "abc123", target: "def456", type: "triggers"})
 
-**Node types:** signal, task, decision, outcome, goal, risk, agent, tool
-**Edge types:** triggers, depends_on, leads_to, branches_to, mitigates, uses`
+**EXAMPLE: User says "create decision 'paid?' branching to 'premium' or 'basic'"**
+1. create_node({label: "decision", name: "paid?"}) → returns {id: "dec1"}
+2. create_node({label: "outcome", name: "premium"}) → returns {id: "out1"}
+3. create_node({label: "outcome", name: "basic"}) → returns {id: "out2"}
+4. **MUST DO:** create_edge({source: "dec1", target: "out1", type: "branches_to"})
+5. **MUST DO:** create_edge({source: "dec1", target: "out2", type: "branches_to"})
+
+**Edge types:** triggers (signal→task/agent/decision), depends_on (task→task/goal), leads_to (task→outcome), branches_to (decision→task/outcome), mitigates (task→risk), uses (task/agent→tool)`
       },
       {
         role: "user",
