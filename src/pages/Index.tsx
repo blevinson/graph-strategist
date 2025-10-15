@@ -54,16 +54,18 @@ const Index = () => {
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left Sidebar - Palette & Co-Pilot */}
-          <div className="w-72 border-r border-border bg-card flex flex-col h-full">
-            <Tabs defaultValue="palette" className="flex-1 flex flex-col min-h-0">
+          <div className="w-72 border-r border-border bg-card flex flex-col">
+            <Tabs defaultValue="palette" className="flex-1 flex flex-col">
               <TabsList className="w-full rounded-none border-b shrink-0">
                 <TabsTrigger value="palette" className="flex-1">Palette</TabsTrigger>
                 <TabsTrigger value="copilot" className="flex-1">Co-Pilot</TabsTrigger>
               </TabsList>
-              <TabsContent value="palette" className="flex-1 min-h-0 overflow-y-auto m-0 p-4 pb-24">
-                <NodePalette />
+              <TabsContent value="palette" className="flex-1 m-0">
+                <div className="h-full overflow-y-auto p-4 pb-24">
+                  <NodePalette />
+                </div>
               </TabsContent>
-              <TabsContent value="copilot" className="flex-1 min-h-0 overflow-hidden m-0 flex flex-col">
+              <TabsContent value="copilot" className="flex-1 m-0 flex flex-col">
                 <CoPilotChat />
               </TabsContent>
             </Tabs>
