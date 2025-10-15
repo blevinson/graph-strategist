@@ -444,28 +444,30 @@ serve(async (req) => {
 
 ${graphContext}
 
-🚨 **CRITICAL: NEVER DELETE NODES UNLESS USER EXPLICITLY SAYS "DELETE" OR "REMOVE"!** 🚨
-
-When user says "change", "update", "modify", "rename" → USE patch_node (keeps connections!)
-When user says "delete", "remove" → USE delete_node (removes connections)
-When user says "add", "create" → USE create_node
+🚨 **CRITICAL RULES:** 🚨
+1. NEVER delete nodes when user asks to modify/update/change them - use patch_node!
+2. ALWAYS create edges when adding new nodes to connect them to the graph!
+3. ONLY use delete_node when user explicitly says "delete" or "remove"
 
 **YOUR TOOLS:**
 - patch_node({node_id: "xxx", props: {name: "new name", ...}}) - Updates node, KEEPS ALL EDGES
 - delete_node({node_id: "xxx"}) - Deletes node AND all its edges (use sparingly!)
-- create_node({label: "task", name: "...", ...}) - Creates new node
+- create_node({label: "task", name: "...", ...}) - Creates new node (returns node with ID)
 - create_edge({source: "xxx", target: "yyy", type: "triggers"}) - Connects nodes
 - delete_edge({edge_id: "zzz"}) - Removes connection
 
-**RIGHT WAY (user says "change X to Y"):**
+**WHEN USER SAYS "CHANGE X TO Y":**
 1. Find node ID for X from graph above
 2. Call: patch_node({node_id: "found-id", props: {name: "Y"}})
 ✅ Node updated, all edges preserved!
 
-**WRONG WAY (DON'T DO THIS):**
-1. delete_node({node_id: "xxx"})
-2. create_node({label: "task", name: "Y"})
-❌ All edges are gone! Node is disconnected!
+**WHEN USER SAYS "ADD X" OR "CREATE X":**
+1. Call: create_node({label: "task", name: "X", ...})
+2. **IMPORTANT:** Then create_edge to connect it to related nodes!
+Example: If adding "send email" task that depends on "validate user":
+   - create_node({label: "task", name: "send email"}) → returns {id: "new-id"}
+   - create_edge({source: "new-id", target: "validate-user-id", type: "depends_on"})
+✅ New node is connected to the graph!
 
 **Node types:** signal, task, decision, outcome, goal, risk, agent, tool
 **Edge types:** triggers, depends_on, leads_to, branches_to, mitigates, uses`
