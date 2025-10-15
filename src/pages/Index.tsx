@@ -35,7 +35,7 @@ const Index = () => {
     }
   };
 
-  const handleAutoLayout = () => {
+  const handleAutoLayout = async () => {
     // Simple hierarchical layout algorithm
     const nodesByType = new Map<string, typeof nodes>();
     
@@ -52,17 +52,18 @@ const Index = () => {
     const columnWidth = 300;
     const rowHeight = 150;
 
-    typeOrder.forEach(type => {
+    for (const type of typeOrder) {
       const typeNodes = nodesByType.get(type) || [];
-      typeNodes.forEach((node, index) => {
+      for (let index = 0; index < typeNodes.length; index++) {
+        const node = typeNodes[index];
         const x = 100 + (index % 3) * columnWidth;
         const y = currentY + Math.floor(index / 3) * rowHeight;
-        updateNodePosition(node.id, x, y);
-      });
+        await updateNodePosition(node.id, x, y);
+      }
       if (typeNodes.length > 0) {
         currentY += Math.ceil(typeNodes.length / 3) * rowHeight + 50;
       }
-    });
+    }
 
     toast({
       title: "Layout Applied",
