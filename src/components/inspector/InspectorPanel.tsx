@@ -185,7 +185,7 @@ export default function InspectorPanel() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-6 pb-8">
+        <div className="p-4 space-y-6">
         {/* Node Details */}
         <div className="space-y-4">
           <div>
