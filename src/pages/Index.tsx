@@ -9,6 +9,7 @@ import { ReactFlowProvider } from 'reactflow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Play, Info } from 'lucide-react';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useGraphStore } from '@/store/graphStore';
 import { toast } from '@/hooks/use-toast';
 
@@ -53,50 +54,62 @@ const Index = () => {
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Sidebar - Palette & Co-Pilot */}
-          <div className="w-72 border-r border-border bg-card flex flex-col">
-            <Tabs defaultValue="palette" className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="w-full rounded-none border-b shrink-0">
-                <TabsTrigger value="palette" className="flex-1">Palette</TabsTrigger>
-                <TabsTrigger value="copilot" className="flex-1">Co-Pilot</TabsTrigger>
-              </TabsList>
-              <TabsContent value="palette" className="flex-1 m-0 overflow-hidden">
-                <div className="h-full overflow-y-auto p-4 pb-24 custom-scrollbar">
-                  <NodePalette />
-                </div>
-              </TabsContent>
-              <TabsContent value="copilot" className="flex-1 m-0 overflow-hidden">
-                <CoPilotChat />
-              </TabsContent>
-            </Tabs>
-          </div>
+          <ResizablePanelGroup direction="horizontal">
+            {/* Left Sidebar - Palette & Co-Pilot */}
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+              <div className="h-full border-r border-border bg-card flex flex-col">
+                <Tabs defaultValue="palette" className="flex-1 flex flex-col overflow-hidden">
+                  <TabsList className="w-full rounded-none border-b shrink-0">
+                    <TabsTrigger value="palette" className="flex-1">Palette</TabsTrigger>
+                    <TabsTrigger value="copilot" className="flex-1">Co-Pilot</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="palette" className="flex-1 m-0 overflow-hidden">
+                    <div className="h-full overflow-y-auto p-4 pb-24 custom-scrollbar">
+                      <NodePalette />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="copilot" className="flex-1 m-0 overflow-hidden">
+                    <CoPilotChat />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </ResizablePanel>
 
-          {/* Graph Canvas */}
-          <div className="flex-1 relative">
-            <GraphCanvas />
-          </div>
+            <ResizableHandle withHandle />
 
-          {/* Right Sidebar - Inspector & Simulation */}
-          <div className="w-96 border-l border-border bg-card flex flex-col">
-            <Tabs defaultValue="inspector" className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="w-full rounded-none border-b shrink-0">
-                <TabsTrigger value="inspector" className="flex-1">
-                  <Info className="h-4 w-4 mr-2" />
-                  Details
-                </TabsTrigger>
-                <TabsTrigger value="simulation" className="flex-1">
-                  <Play className="h-4 w-4 mr-2" />
-                  Simulation
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="inspector" className="flex-1 m-0 overflow-hidden">
-                <InspectorPanel />
-              </TabsContent>
-              <TabsContent value="simulation" className="flex-1 m-0 overflow-hidden">
-                <SimulationPanel />
-              </TabsContent>
-            </Tabs>
-          </div>
+            {/* Graph Canvas */}
+            <ResizablePanel defaultSize={55} minSize={30}>
+              <div className="h-full relative">
+                <GraphCanvas />
+              </div>
+            </ResizablePanel>
+
+            <ResizableHandle withHandle />
+
+            {/* Right Sidebar - Inspector & Simulation */}
+            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+              <div className="h-full border-l border-border bg-card flex flex-col">
+                <Tabs defaultValue="inspector" className="flex-1 flex flex-col overflow-hidden">
+                  <TabsList className="w-full rounded-none border-b shrink-0">
+                    <TabsTrigger value="inspector" className="flex-1">
+                      <Info className="h-4 w-4 mr-2" />
+                      Details
+                    </TabsTrigger>
+                    <TabsTrigger value="simulation" className="flex-1">
+                      <Play className="h-4 w-4 mr-2" />
+                      Simulation
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="inspector" className="flex-1 m-0 overflow-hidden">
+                    <InspectorPanel />
+                  </TabsContent>
+                  <TabsContent value="simulation" className="flex-1 m-0 overflow-hidden">
+                    <SimulationPanel />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
 
         {/* FAB */}
