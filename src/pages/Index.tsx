@@ -39,7 +39,7 @@ const Index = () => {
               <TabsContent value="workflows" className="flex-1 overflow-auto m-0">
                 <WorkflowsDrawer />
               </TabsContent>
-              <TabsContent value="strategy" className="flex-1 m-0 h-0">
+              <TabsContent value="strategy" className="flex-1 m-0 h-0 flex flex-col">
                 <StrategyPanel />
               </TabsContent>
             </Tabs>
