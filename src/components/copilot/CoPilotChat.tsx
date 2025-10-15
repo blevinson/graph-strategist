@@ -112,8 +112,8 @@ export const CoPilotChat = () => {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
+      <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
+        <div className="space-y-4 pb-4">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -193,7 +193,7 @@ export const CoPilotChat = () => {
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input */}
       <div className="p-4 border-t border-border shrink-0">

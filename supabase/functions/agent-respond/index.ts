@@ -475,10 +475,10 @@ Be friendly and build complete, connected workflows!`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'claude-sonnet-4-5',
         messages,
         tools,
-        tool_choice: "auto"
+        tool_choice: { type: "auto" }
       }),
     });
 
@@ -541,7 +541,7 @@ Be friendly and build complete, connected workflows!`
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: 'claude-sonnet-4-5',
           messages: followUpMessages
         }),
       });
