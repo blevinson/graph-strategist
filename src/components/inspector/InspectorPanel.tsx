@@ -169,7 +169,7 @@ export default function InspectorPanel() {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col h-full min-h-0">
       <div className="bg-card border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{config.emoji}</span>
