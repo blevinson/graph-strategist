@@ -18,7 +18,7 @@ interface GraphState {
   setSearchQuery: (query: string) => void;
   
   fetchGraph: () => Promise<void>;
-  createNode: (nodeType: NodeType, name: string, props?: any) => Promise<void>;
+  createNode: (nodeType: NodeType, name: string, props?: any) => Promise<string>;
   updateNode: (id: string, props: any) => Promise<void>;
   deleteNode: (id: string) => Promise<void>;
   createEdge: (source: string, target: string, type: RelationType) => Promise<void>;
@@ -91,6 +91,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       };
       
       set({ nodes: [...get().nodes, node] });
+      return newNode.id;
     } catch (error) {
       console.error('Failed to create node:', error);
       throw error;
