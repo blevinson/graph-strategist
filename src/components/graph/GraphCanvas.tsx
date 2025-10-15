@@ -22,13 +22,14 @@ const nodeTypes = {
 };
 
 export default function GraphCanvas() {
-  const { nodes: storeNodes, edges: storeEdges, fetchGraph, createEdge, selectedNode, deleteNode, subscribeToChanges, subscribeToWorkflowExecution, activeEdgeIds } = useGraphStore();
+  const { nodes: storeNodes, edges: storeEdges, fetchGraph, createEdge, selectedNode, deleteNode, subscribeToChanges, subscribeToWorkflowExecution, activeEdgeIds, updateNodePosition } = useGraphStore();
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
   const [pendingConnection, setPendingConnection] = useState<Connection | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    fetchGraph();
+    fetchGraph().then(() => setIsInitialized(true));
     const unsubscribeGraph = subscribeToChanges();
     const unsubscribeWorkflow = subscribeToWorkflowExecution();
     return () => {
@@ -87,12 +88,9 @@ export default function GraphCanvas() {
   // Update node positions in store when dragging stops
   const onNodeDragStop = useCallback(
     (event: any, node: any) => {
-      const updatedNodes = nodes.map((n) =>
-        n.id === node.id ? { ...n, position: node.position } : n
-      );
-      setNodes(updatedNodes);
+      updateNodePosition(node.id, node.position.x, node.position.y);
     },
-    [nodes, setNodes]
+    [updateNodePosition]
   );
 
   return (
@@ -105,7 +103,8 @@ export default function GraphCanvas() {
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
         nodeTypes={nodeTypes}
-        fitView
+        fitView={!isInitialized}
+        fitViewOptions={{ padding: 0.2 }}
         className="bg-gradient-to-br from-background via-card to-background"
         minZoom={0.1}
         maxZoom={2}

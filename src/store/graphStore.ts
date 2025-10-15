@@ -35,6 +35,7 @@ interface GraphState {
   fetchGraph: () => Promise<void>;
   createNode: (nodeType: NodeType, name: string, props?: any) => Promise<string>;
   updateNode: (id: string, props: any) => Promise<void>;
+  updateNodePosition: (id: string, x: number, y: number) => void;
   deleteNode: (id: string) => Promise<void>;
   createEdge: (source: string, target: string, type: RelationType) => Promise<void>;
   deleteEdge: (edgeId: string) => Promise<void>;
@@ -161,6 +162,14 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       console.error('Failed to update node:', error);
       throw error;
     }
+  },
+
+  updateNodePosition: (id, x, y) => {
+    set({
+      nodes: get().nodes.map(n =>
+        n.id === id ? { ...n, position: { x, y } } : n
+      )
+    });
   },
 
   deleteNode: async (id) => {
