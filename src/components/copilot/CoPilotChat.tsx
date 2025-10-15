@@ -31,16 +31,13 @@ export const CoPilotChat = () => {
   const { fetchGraph } = useGraphStore();
 
   useEffect(() => {
-    const scrollToBottom = () => {
+    const timer = setTimeout(() => {
       if (scrollRef.current) {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }
-    };
+    }, 0);
     
-    // Use requestAnimationFrame to ensure DOM has updated
-    requestAnimationFrame(() => {
-      requestAnimationFrame(scrollToBottom);
-    });
+    return () => clearTimeout(timer);
   }, [messages, isLoading]);
 
   const handleSend = async () => {
