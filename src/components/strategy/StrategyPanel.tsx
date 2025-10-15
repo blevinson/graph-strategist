@@ -8,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useGraphStore } from '@/store/graphStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export const StrategyPanel = () => {
   const [query, setQuery] = useState('');
@@ -76,8 +78,8 @@ export const StrategyPanel = () => {
   ];
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-6 border-b border-border">
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="p-6 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2 mb-2">
           <Brain className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-bold">Strategy Agent</h2>
@@ -87,7 +89,8 @@ export const StrategyPanel = () => {
         </p>
       </div>
 
-      <ScrollArea className="flex-1 p-6">
+      <ScrollArea className="flex-1">
+        <div className="p-6 space-y-6">
         {/* Quick Actions */}
         <div className="mb-6">
           <h3 className="text-sm font-medium mb-3">Quick Analysis</h3>
@@ -112,7 +115,7 @@ export const StrategyPanel = () => {
 
         {/* Current Analysis */}
         {currentInsight && (
-          <Card className="mb-6 border-primary/20 bg-primary/5">
+          <Card className="border-primary/20 bg-primary/5">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
@@ -120,7 +123,11 @@ export const StrategyPanel = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{currentInsight}</p>
+              <div className="prose prose-sm prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {currentInsight}
+                </ReactMarkdown>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -137,9 +144,11 @@ export const StrategyPanel = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {insight.insight}
-                  </p>
+                  <div className="prose prose-sm prose-invert max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {insight.insight}
+                    </ReactMarkdown>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -154,10 +163,11 @@ export const StrategyPanel = () => {
             </p>
           </div>
         )}
+        </div>
       </ScrollArea>
 
       {/* Input Area */}
-      <div className="p-6 border-t border-border bg-card/50">
+      <div className="p-6 border-t border-border bg-card/50 flex-shrink-0">
         {selectedNode && (
           <Badge variant="secondary" className="mb-3">
             <Sparkles className="h-3 w-3 mr-1" />
