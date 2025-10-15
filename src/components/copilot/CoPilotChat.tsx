@@ -32,7 +32,10 @@ export const CoPilotChat = () => {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   }, [messages]);
 
@@ -111,8 +114,8 @@ export const CoPilotChat = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-4" ref={scrollRef}>
-        <div className="space-y-4 pb-24">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 scroll-smooth" ref={scrollRef}>
+        <div className="space-y-4 pb-4">
           {messages.map((message, index) => (
             <div
               key={index}
