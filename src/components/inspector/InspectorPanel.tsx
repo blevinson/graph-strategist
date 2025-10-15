@@ -168,7 +168,7 @@ export default function InspectorPanel() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">`
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="bg-card border-b border-border p-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{config.emoji}</span>
@@ -183,8 +183,8 @@ export default function InspectorPanel() {
         </Button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar">
-        <div className="p-4 space-y-6 pb-24">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 custom-scrollbar">
+        <div className="space-y-6 pb-24">
         {/* Node Details */}
         <div className="space-y-4">
           <div>
@@ -422,7 +422,7 @@ export default function InspectorPanel() {
             </pre>
           </CollapsibleContent>
         </Collapsible>
-        </div>
+      </div>
       </div>
     </div>
   );
