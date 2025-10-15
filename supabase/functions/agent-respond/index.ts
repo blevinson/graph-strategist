@@ -385,13 +385,14 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, messages: conversationHistory } = await req.json();
     
     if (!prompt) {
       throw new Error("Prompt is required");
     }
 
     console.log("Received prompt:", prompt);
+    console.log("Conversation history length:", conversationHistory?.length || 0);
 
     // Query current graph state to provide context
     const { data: existingNodes } = await supabase.from('nodes').select('*');
@@ -401,10 +402,9 @@ serve(async (req) => {
       ? `\n\n**CURRENT GRAPH STATE:**\nNodes (${existingNodes.length}):\n${existingNodes.map(n => `- ${n.label}: "${n.props.name}" (ID: ${n.id})`).join('\n')}\n\nEdges (${existingEdges?.length || 0}):\n${existingEdges?.map(e => `- ${e.type}: ${e.source} → ${e.target}`).join('\n') || 'None'}`
       : '\n\n**CURRENT GRAPH STATE:** Empty canvas - no nodes or edges yet.';
 
-    const messages = [
-      {
-        role: "system",
-        content: `You are a Graph Strategist co-pilot. You help users build and modify their strategy graph.
+    const systemMessage = {
+      role: "system",
+      content: `You are a Graph Strategist co-pilot. You help users build and modify their strategy graph.
 
 ${graphContext}
 
@@ -434,12 +434,12 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
 5. **MUST DO:** create_edge({source: "dec1", target: "out2", type: "branches_to"})
 
 **Edge types:** triggers (signal→task/agent/decision), depends_on (task→task/goal), leads_to (task→outcome), branches_to (decision→task/outcome), mitigates (task→risk), uses (task/agent→tool)`
-      },
-      {
-        role: "user",
-        content: prompt
-      }
-    ];
+    };
+
+    // Build messages array with conversation history
+    const userMessages = conversationHistory && conversationHistory.length > 0
+      ? conversationHistory.filter((m: any) => m.role === 'user' || m.role === 'assistant')
+      : [{ role: "user", content: prompt }];
 
     // Call Claude with tool calling
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -452,8 +452,8 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 4096,
-        messages: [messages[1]], // Only user message, system is separate
-        system: messages[0].content, // System message separate
+        messages: userMessages,
+        system: systemMessage.content,
         tools
       }),
     });
@@ -524,7 +524,7 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
           .map((r, i) => `Node ${i + 1}: ${r.result.props.name} (ID: ${r.result.id})`)
           .join('\n');
 
-        const edgeSystemPrompt = messages[0].content;
+        const edgeSystemPrompt = systemMessage.content;
         const edgeUserMessage = `Created:\n${nodeIds}\n\n**CRITICAL: You MUST call create_edge for EACH connection in this request: "${prompt}"\n\nDo NOT respond with text. ONLY use the create_edge tool multiple times.**`;
 
         console.log("Requesting edge creation with node IDs:", nodeIds);
@@ -599,7 +599,7 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
               role: 'user', 
               content: `I deleted the old nodes. Now CREATE the new nodes for this request: "${prompt}"\n\nYou MUST create ALL nodes mentioned in the request. Use create_node for each one.` 
             }],
-            system: messages[0].content,
+            system: systemMessage.content,
             tools 
           })
         });
@@ -644,7 +644,7 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
                   role: 'user', 
                   content: `Created these nodes:\n${newNodeIds.join('\n')}\n\n**CRITICAL: Now create ALL the edges for this request: "${prompt}"\n\nYou MUST call create_edge for EVERY connection. Do NOT skip any connections!**` 
                 }],
-                system: messages[0].content,
+                system: systemMessage.content,
                 tools,
                 tool_choice: { type: "any" }
               })
