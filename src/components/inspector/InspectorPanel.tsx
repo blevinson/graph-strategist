@@ -184,7 +184,7 @@ export default function InspectorPanel() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 custom-scrollbar">
-        <div className="space-y-6 pb-24">
+        <div className="space-y-6 pb-32">
         {/* Node Details */}
         <div className="space-y-4">
           <div>
