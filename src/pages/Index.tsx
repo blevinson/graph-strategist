@@ -55,17 +55,17 @@ const Index = () => {
         <div className="flex-1 flex overflow-hidden">
           {/* Left Sidebar - Palette & Co-Pilot */}
           <div className="w-72 border-r border-border bg-card flex flex-col">
-            <Tabs defaultValue="palette" className="flex-1 flex flex-col">
+            <Tabs defaultValue="palette" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="w-full rounded-none border-b shrink-0">
                 <TabsTrigger value="palette" className="flex-1">Palette</TabsTrigger>
                 <TabsTrigger value="copilot" className="flex-1">Co-Pilot</TabsTrigger>
               </TabsList>
-              <TabsContent value="palette" className="flex-1 m-0">
+              <TabsContent value="palette" className="flex-1 m-0 overflow-hidden">
                 <div className="h-full overflow-y-auto p-4 pb-24">
                   <NodePalette />
                 </div>
               </TabsContent>
-              <TabsContent value="copilot" className="flex-1 m-0 h-full">
+              <TabsContent value="copilot" className="flex-1 m-0 overflow-hidden">
                 <CoPilotChat />
               </TabsContent>
             </Tabs>
