@@ -237,6 +237,72 @@ Deno.serve(async (req) => {
       });
     }
 
+    // POST /signals/{id}/trigger - trigger a signal and activate downstream nodes
+    if (method === 'POST' && path.match(/^signals\/[^/]+\/trigger$/)) {
+      const signalId = path.split('/')[1];
+      
+      // Verify the node is actually a signal
+      const { data: signalNode, error: signalError } = await supabase
+        .from('nodes')
+        .select('*')
+        .eq('id', signalId)
+        .eq('label', 'signal')
+        .single();
+      
+      if (signalError || !signalNode) {
+        return new Response(JSON.stringify({ error: 'Signal not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Find all edges where this signal is the source (with type 'triggers')
+      const { data: edges, error: edgesError } = await supabase
+        .from('edges')
+        .select('target, type')
+        .eq('source', signalId)
+        .eq('type', 'triggers');
+      
+      if (edgesError) throw edgesError;
+      
+      const triggeredNodes = edges?.map(e => e.target) || [];
+      
+      // Update triggered nodes' status to 'active'
+      if (triggeredNodes.length > 0) {
+        for (const nodeId of triggeredNodes) {
+          const { data: node, error: nodeError } = await supabase
+            .from('nodes')
+            .select('props')
+            .eq('id', nodeId)
+            .single();
+          
+          if (!nodeError && node) {
+            await supabase
+              .from('nodes')
+              .update({ 
+                props: { 
+                  ...node.props, 
+                  status: 'active',
+                  triggered_at: new Date().toISOString(),
+                  triggered_by: signalId
+                } 
+              })
+              .eq('id', nodeId);
+          }
+        }
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        signal_id: signalId,
+        signal_name: signalNode.props.name,
+        triggered_nodes: triggeredNodes,
+        message: `Signal "${signalNode.props.name}" triggered ${triggeredNodes.length} downstream node(s)`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     return new Response(JSON.stringify({ error: 'Not found' }), {
       status: 404,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

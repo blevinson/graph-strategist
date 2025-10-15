@@ -5,7 +5,8 @@ import { useGraphStore } from '@/store/graphStore';
 import HandleClickDialog from './HandleClickDialog';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Zap, Loader2, CheckCircle, XCircle, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const CustomNode = memo(({ data, id }: NodeProps<NodeData>) => {
@@ -24,6 +25,7 @@ const CustomNode = memo(({ data, id }: NodeProps<NodeData>) => {
   const [handleType, setHandleType] = useState<'source' | 'target'>('source');
   const [workflowCount, setWorkflowCount] = useState(0);
   const [workflowStatus, setWorkflowStatus] = useState<'idle' | 'running' | 'succeeded' | 'failed'>('idle');
+  const [isTriggeringSignal, setIsTriggeringSignal] = useState(false);
 
   // Fetch workflows for this node
   useEffect(() => {
@@ -124,6 +126,40 @@ const CustomNode = memo(({ data, id }: NodeProps<NodeData>) => {
     }
   };
 
+  const handleTriggerSignal = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsTriggeringSignal(true);
+    
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/graph-api/signals/${id}/trigger`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to trigger signal');
+      }
+
+      const result = await response.json();
+      
+      toast.success('Signal triggered!', {
+        description: `Triggered ${result.triggered_nodes?.length || 0} downstream node(s)`
+      });
+    } catch (error) {
+      console.error('Error triggering signal:', error);
+      toast.error('Failed to trigger signal');
+    } finally {
+      setIsTriggeringSignal(false);
+    }
+  };
+
   return (
     <div
       onClick={() => setSelectedNode(id)}
@@ -163,6 +199,22 @@ const CustomNode = memo(({ data, id }: NodeProps<NodeData>) => {
       <div className="text-sm font-semibold text-foreground mb-1">
         {data.props.name}
       </div>
+      
+      {data.label === 'signal' && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full mt-2 h-7 text-xs"
+          onClick={handleTriggerSignal}
+          disabled={isTriggeringSignal}
+        >
+          {isTriggeringSignal ? (
+            <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Triggering...</>
+          ) : (
+            <><Play className="h-3 w-3 mr-1" /> Trigger Signal</>
+          )}
+        </Button>
+      )}
       
       {data.props.status && (
         <div className="text-xs text-muted-foreground">
