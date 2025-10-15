@@ -338,6 +338,7 @@ export default function InspectorPanel() {
         )}
 
         {/* Connected Edges */}
+        <div className="pt-4 border-t">
         <Collapsible>
           <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted rounded-lg hover:bg-muted/80">
             <span className="font-medium">Connections ({nodeEdges.length})</span>
@@ -358,10 +359,11 @@ export default function InspectorPanel() {
             ))}
           </CollapsibleContent>
         </Collapsible>
+        </div>
 
         {/* Special Actions */}
         {node.data.label === 'goal' && (
-          <div>
+          <div className="pt-4 border-t">
             <Button
               onClick={loadBlockers}
               variant="outline"
@@ -386,7 +388,7 @@ export default function InspectorPanel() {
         )}
 
         {node.data.label === 'signal' && (
-          <div>
+          <div className="pt-4 border-t">
             <Button
               onClick={loadImpactedGoals}
               variant="outline"
@@ -411,6 +413,7 @@ export default function InspectorPanel() {
         )}
 
         {/* Raw JSON */}
+        <div className="pt-4 border-t">
         <Collapsible>
           <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted rounded-lg hover:bg-muted/80">
             <span className="font-medium">Raw JSON</span>
@@ -422,6 +425,7 @@ export default function InspectorPanel() {
             </pre>
           </CollapsibleContent>
         </Collapsible>
+        </div>
         </div>
       </div>
     </div>
