@@ -43,11 +43,16 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   fetchGraph: async () => {
     set({ isLoading: true });
     try {
-      const { data, error } = await supabase.functions.invoke('graph-api/graph');
+      const response = await fetch(`${FUNCTION_URL}/graph`, {
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
       
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to fetch graph');
       
-      const { nodes, edges } = data;
+      const { nodes, edges } = await response.json();
       
       set({
         nodes: nodes.map((n: NodeData) => ({
@@ -75,14 +80,19 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   createNode: async (nodeType, name, props = {}) => {
     try {
-      const { data, error } = await supabase.functions.invoke('graph-api/nodes', {
-        body: { label: nodeType, props: { name, ...props } },
-        method: 'POST'
+      const response = await fetch(`${FUNCTION_URL}/nodes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ label: nodeType, props: { name, ...props } }),
       });
       
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to create node');
       
-      const newNode = data;
+      const newNode = await response.json();
       const node: Node<NodeData> = {
         id: newNode.id,
         type: 'custom',
@@ -100,12 +110,17 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   updateNode: async (id, props) => {
     try {
-      const { error } = await supabase.functions.invoke(`graph-api/nodes/${id}`, {
-        body: { props },
-        method: 'PATCH'
+      const response = await fetch(`${FUNCTION_URL}/nodes/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ props }),
       });
       
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to update node');
       
       const nodes = get().nodes.map((node) =>
         node.id === id
@@ -122,11 +137,15 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   deleteNode: async (id) => {
     try {
-      const { error } = await supabase.functions.invoke(`graph-api/nodes/${id}`, {
-        method: 'DELETE'
+      const response = await fetch(`${FUNCTION_URL}/nodes/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
       });
       
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to delete node');
       
       set({
         nodes: get().nodes.filter((node) => node.id !== id),
@@ -141,14 +160,19 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   createEdge: async (source, target, type) => {
     try {
-      const { data, error } = await supabase.functions.invoke('graph-api/edges', {
-        body: { source, target, type },
-        method: 'POST'
+      const response = await fetch(`${FUNCTION_URL}/edges`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ source, target, type }),
       });
       
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to create edge');
       
-      const newEdge = data;
+      const newEdge = await response.json();
       const edge: Edge<EdgeData> = {
         id: newEdge.id,
         source: newEdge.source,
@@ -168,11 +192,15 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   deleteEdge: async (edgeId) => {
     try {
-      const { error } = await supabase.functions.invoke(`graph-api/edges/${edgeId}`, {
-        method: 'DELETE'
+      const response = await fetch(`${FUNCTION_URL}/edges/${edgeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
       });
       
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to delete edge');
       set({ edges: get().edges.filter((edge) => edge.id !== edgeId) });
     } catch (error) {
       console.error('Failed to delete edge:', error);
@@ -187,11 +215,16 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     }
     
     try {
-      const { data, error } = await supabase.functions.invoke(`graph-api/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`${FUNCTION_URL}/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
       
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to search nodes');
       
-      const nodes = data;
+      const nodes = await response.json();
       set({
         nodes: nodes.map((n: NodeData) => ({
           id: n.id,
@@ -207,9 +240,14 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   getGoalBlockers: async (goalId) => {
     try {
-      const { data, error } = await supabase.functions.invoke(`graph-api/goals/${goalId}/blockers`);
-      if (error) throw error;
-      return data;
+      const response = await fetch(`${FUNCTION_URL}/goals/${goalId}/blockers`, {
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to get goal blockers');
+      return await response.json();
     } catch (error) {
       console.error('Failed to get goal blockers:', error);
       return [];
@@ -218,9 +256,14 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   getSignalImpactedGoals: async (signalId) => {
     try {
-      const { data, error } = await supabase.functions.invoke(`graph-api/signals/${signalId}/impacted-goals`);
-      if (error) throw error;
-      return data;
+      const response = await fetch(`${FUNCTION_URL}/signals/${signalId}/impacted-goals`, {
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to get signal impacted goals');
+      return await response.json();
     } catch (error) {
       console.error('Failed to get signal impacted goals:', error);
       return [];
