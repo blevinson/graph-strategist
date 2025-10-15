@@ -530,69 +530,103 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
       }
     }
 
-    // If there were tool calls, make a second request with tools available to create edges
+    // Handle multi-step operations: delete+create, or create+edges
     let outputText = message.content || "";
     
     if (toolCalls.length > 0) {
-      // Build context message with node IDs for creating edges
-      const nodeIds = toolResults
-        .filter(r => r.tool === 'create_node' && r.result?.id)
-        .map((r, i) => `Node ${i + 1}: ${r.result.props.name} (ID: ${r.result.id})`)
-        .join('\n');
+      const createdNodes = toolResults.filter(r => r.tool === 'create_node' && r.result?.id);
+      const hasDeletes = toolResults.some(r => r.tool === 'delete_node');
+      const hasCreates = createdNodes.length > 0;
+      
+      // Case 1: Created nodes - need to create edges
+      if (hasCreates) {
+        const nodeIds = createdNodes
+          .map((r, i) => `Node ${i + 1}: ${r.result.props.name} (ID: ${r.result.id})`)
+          .join('\n');
 
-      const followUpMessages = [
-        ...messages,
-        message,
-        ...toolCalls.map((tc: any, i: number) => ({
-          role: "tool",
-          tool_call_id: tc.id,
-          content: JSON.stringify(toolResults[i].result || toolResults[i].error)
-        })),
-        {
-          role: "user",
-          content: `Great! You created these nodes:\n${nodeIds}\n\n**CRITICAL: Now you MUST create the edges** to connect them based on the original user request: "${prompt}"\n\nUse create_edge({source: "id1", target: "id2", type: "triggers|depends_on|leads_to|branches_to|mitigates|uses"}) for EACH connection described in the original request.\n\nFor example, if user said "signal X triggers task Y", you MUST call create_edge with the signal's ID as source, task's ID as target, and type "triggers".`
-        }
-      ];
-
-      const followUpResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: followUpMessages,
-          tools,
-          tool_choice: { type: "auto" }
-        }),
-      });
-
-      if (followUpResponse.ok) {
-        const followUpData = await followUpResponse.json();
-        const followUpMessage = followUpData.choices[0].message;
-        const followUpToolCalls = followUpMessage.tool_calls || [];
-        
-        // Execute second round of tool calls (edges)
-        for (const toolCall of followUpToolCalls) {
-          try {
-            const args = JSON.parse(toolCall.function.arguments);
-            const result = await executeTool(toolCall.function.name, args);
-            toolResults.push({
-              tool: toolCall.function.name,
-              args,
-              result
-            });
-          } catch (error) {
-            console.error(`Tool execution error for ${toolCall.function.name}:`, error);
-            toolResults.push({
-              tool: toolCall.function.name,
-              error: error instanceof Error ? error.message : String(error)
-            });
+        const edgeMessages = [
+          ...messages, message,
+          ...toolCalls.map((tc: any, i: number) => ({
+            role: "tool", tool_call_id: tc.id,
+            content: JSON.stringify(toolResults[i].result || toolResults[i].error)
+          })),
+          {
+            role: "user",
+            content: `Created:\n${nodeIds}\n\n**NOW CREATE EDGES** based on: "${prompt}"\n\nUse create_edge for each connection.`
           }
+        ];
+
+        const edgeResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages: edgeMessages, tools })
+        });
+
+        if (edgeResp.ok) {
+          const edgeData = await edgeResp.json();
+          for (const tc of (edgeData.choices[0].message.tool_calls || [])) {
+            try {
+              const result = await executeTool(tc.function.name, JSON.parse(tc.function.arguments));
+              toolResults.push({ tool: tc.function.name, args: JSON.parse(tc.function.arguments), result });
+            } catch (e) { console.error(e); }
+          }
+          outputText = "Created nodes and connected them!";
         }
-        
-        outputText = followUpMessage.content || "Created nodes and edges!";
+      }
+      // Case 2: Only deleted - user wants to create after
+      else if (hasDeletes && prompt.toLowerCase().includes('create')) {
+        const createMessages = [
+          ...messages, message,
+          ...toolCalls.map((tc: any, i: number) => ({
+            role: "tool", tool_call_id: tc.id,
+            content: JSON.stringify(toolResults[i].result || toolResults[i].error)
+          })),
+          { role: "user", content: `Deleted. Now CREATE: "${prompt}"` }
+        ];
+
+        const createResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages: createMessages, tools })
+        });
+
+        if (createResp.ok) {
+          const createData = await createResp.json();
+          const newNodeIds: string[] = [];
+          for (const tc of (createData.choices[0].message.tool_calls || [])) {
+            try {
+              const result = await executeTool(tc.function.name, JSON.parse(tc.function.arguments));
+              toolResults.push({ tool: tc.function.name, result });
+              if (tc.function.name === 'create_node' && result?.id) {
+                newNodeIds.push(`${result.props.name} (ID: ${result.id})`);
+              }
+            } catch (e) { console.error(e); }
+          }
+          
+          // Now edges
+          if (newNodeIds.length > 0) {
+            const edgeMessages2 = [
+              ...createMessages, createData.choices[0].message,
+              { role: "user", content: `Created:\n${newNodeIds.join('\n')}\n\nNow edges for: "${prompt}"` }
+            ];
+
+            const edgeResp2 = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages: edgeMessages2, tools })
+            });
+
+            if (edgeResp2.ok) {
+              const edgeData2 = await edgeResp2.json();
+              for (const tc of (edgeData2.choices[0].message.tool_calls || [])) {
+                try {
+                  await executeTool(tc.function.name, JSON.parse(tc.function.arguments));
+                } catch (e) { console.error(e); }
+              }
+            }
+          }
+          outputText = "Deleted old nodes, created new ones with connections!";
+        }
       }
     }
 
