@@ -40,7 +40,10 @@ Deno.serve(async (req) => {
         id: n.id,
         label: n.label,
         props: n.props,
-        position: { x: n.x || 0, y: n.y || 0 }
+        position: { x: n.x || 0, y: n.y || 0 },
+        inputs: n.inputs || [],
+        outputs: n.outputs || [],
+        context: n.context || {}
       }));
 
       const edges = edgesRes.data.map((e: any) => ({

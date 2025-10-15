@@ -236,6 +236,50 @@ export default function InspectorPanel() {
           </div>
         </div>
 
+        {/* Inputs & Outputs */}
+        <div className="space-y-4 pt-4 border-t">
+          <div>
+            <Label className="text-sm font-semibold mb-2 block">Inputs</Label>
+            <div className="space-y-1">
+              {node.data.inputs && Array.isArray(node.data.inputs) && node.data.inputs.length > 0 ? (
+                node.data.inputs.map((input, i) => (
+                  <Badge key={i} variant="outline" className="mr-1 mb-1">
+                    {input}
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground">No inputs defined</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm font-semibold mb-2 block">Outputs</Label>
+            <div className="space-y-1">
+              {node.data.outputs && Array.isArray(node.data.outputs) && node.data.outputs.length > 0 ? (
+                node.data.outputs.map((output, i) => (
+                  <Badge key={i} variant="secondary" className="mr-1 mb-1">
+                    {output}
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground">No outputs defined</p>
+              )}
+            </div>
+          </div>
+
+          {node.data.context && Object.keys(node.data.context).length > 0 && (
+            <div>
+              <Label className="text-sm font-semibold mb-2 block">Strategic Context</Label>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
+                  {JSON.stringify(node.data.context, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Workflows Section */}
         {workflows.length > 0 && (
           <div className="space-y-3 pt-4 border-t">

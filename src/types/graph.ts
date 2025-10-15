@@ -27,6 +27,9 @@ export interface NodeData {
     [key: string]: any;
   };
   position?: { x: number; y: number };
+  inputs?: string[];
+  outputs?: string[];
+  context?: Record<string, any>;
 }
 
 export interface EdgeData {
