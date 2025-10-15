@@ -60,7 +60,7 @@ const Index = () => {
                 <TabsTrigger value="palette" className="flex-1">Palette</TabsTrigger>
                 <TabsTrigger value="copilot" className="flex-1">Co-Pilot</TabsTrigger>
               </TabsList>
-              <TabsContent value="palette" className="flex-1 overflow-auto m-0 p-4">
+              <TabsContent value="palette" className="flex-1 overflow-auto m-0 p-4 pb-8">
                 <NodePalette />
               </TabsContent>
               <TabsContent value="copilot" className="flex-1 m-0 h-0 flex flex-col">
