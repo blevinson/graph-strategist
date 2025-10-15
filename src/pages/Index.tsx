@@ -96,9 +96,9 @@ const Index = () => {
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden" id="main-content">
-          <ResizablePanelGroup direction="horizontal">
+          <ResizablePanelGroup direction="horizontal" storage={localStorage} autoSaveId="graph-strategist-layout">
             {/* Left Sidebar - Palette & Co-Pilot */}
-            <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+            <ResizablePanel id="left-sidebar" defaultSize={20} minSize={15} maxSize={30}>
               <div className="h-full border-r border-border bg-card flex flex-col">
                 <Tabs value={activeLeftTab} onValueChange={setActiveLeftTab} className="flex-1 flex flex-col overflow-hidden">
                   <TabsList className="w-full rounded-none border-b shrink-0">
@@ -120,7 +120,7 @@ const Index = () => {
             <ResizableHandle withHandle />
 
             {/* Graph Canvas */}
-            <ResizablePanel defaultSize={55} minSize={30}>
+            <ResizablePanel id="graph-canvas" defaultSize={55} minSize={30}>
               <div className="h-full relative">
                 <GraphCanvas />
               </div>
@@ -129,7 +129,7 @@ const Index = () => {
             <ResizableHandle withHandle />
 
             {/* Right Sidebar - Inspector & Simulation */}
-            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+            <ResizablePanel id="right-sidebar" defaultSize={25} minSize={20} maxSize={40}>
               <div className="h-full border-l border-border bg-card flex flex-col">
                 <Tabs value={activeRightTab} onValueChange={setActiveRightTab} className="flex-1 flex flex-col overflow-hidden">
                   <TabsList className="w-full rounded-none border-b shrink-0">
