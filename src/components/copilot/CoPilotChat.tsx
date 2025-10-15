@@ -115,7 +115,7 @@ export const CoPilotChat = () => {
 
       {/* Messages */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 scroll-smooth" ref={scrollRef}>
-        <div className="space-y-4 pb-4">
+        <div className="space-y-4 pb-32">
           {messages.map((message, index) => (
             <div
               key={index}
