@@ -79,7 +79,7 @@ const Index = () => {
           {/* Right Sidebar - Inspector & Simulation */}
           <div className="w-96 border-l border-border bg-card overflow-hidden flex flex-col">
             <Tabs defaultValue="inspector" className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="w-full rounded-none border-b">
+              <TabsList className="w-full rounded-none border-b shrink-0">
                 <TabsTrigger value="inspector" className="flex-1">
                   <Info className="h-4 w-4 mr-2" />
                   Details
