@@ -32,7 +32,10 @@ export const CoPilotChat = () => {
   const { fetchGraph } = useGraphStore();
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+    return () => clearTimeout(timer);
   }, [messages]);
 
   const handleSend = async () => {
@@ -111,7 +114,7 @@ export const CoPilotChat = () => {
 
       {/* Messages */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 scroll-smooth" ref={scrollRef}>
-        <div className="space-y-4 pb-32">
+        <div className="space-y-4">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -190,7 +193,7 @@ export const CoPilotChat = () => {
               </Card>
             </div>
           )}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-32" />
         </div>
       </div>
 
