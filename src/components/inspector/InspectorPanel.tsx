@@ -422,7 +422,7 @@ export default function InspectorPanel() {
             </pre>
           </CollapsibleContent>
         </Collapsible>
-      </div>
+        </div>
       </div>
     </div>
   );
