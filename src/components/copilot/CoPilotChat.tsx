@@ -28,7 +28,19 @@ export const CoPilotChat = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { fetchGraph } = useGraphStore();
+  const { fetchGraph, copilotMessage, setCopilotMessage } = useGraphStore();
+
+  // Handle incoming copilot messages from other components
+  useEffect(() => {
+    if (copilotMessage) {
+      setInput(copilotMessage);
+      setCopilotMessage(null);
+      // Auto-send the message
+      setTimeout(() => {
+        handleSend();
+      }, 100);
+    }
+  }, [copilotMessage]);
 
   useEffect(() => {
     const scrollToBottom = () => {

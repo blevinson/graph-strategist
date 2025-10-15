@@ -1,3 +1,4 @@
+import React from 'react';
 import GraphCanvas from '@/components/graph/GraphCanvas';
 import InspectorPanel from '@/components/inspector/InspectorPanel';
 import SearchBar from '@/components/toolbar/SearchBar';
@@ -15,6 +16,8 @@ import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
   const { runSimulation, nodes, updateNodePosition } = useGraphStore();
+  const [activeLeftTab, setActiveLeftTab] = React.useState('palette');
+  const [activeRightTab, setActiveRightTab] = React.useState('inspector');
 
   const handleRunSimulation = async () => {
     try {
@@ -92,12 +95,12 @@ const Index = () => {
         </header>
 
         {/* Main Content */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden" id="main-content">
           <ResizablePanelGroup direction="horizontal">
             {/* Left Sidebar - Palette & Co-Pilot */}
             <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
               <div className="h-full border-r border-border bg-card flex flex-col">
-                <Tabs defaultValue="palette" className="flex-1 flex flex-col overflow-hidden">
+                <Tabs value={activeLeftTab} onValueChange={setActiveLeftTab} className="flex-1 flex flex-col overflow-hidden">
                   <TabsList className="w-full rounded-none border-b shrink-0">
                     <TabsTrigger value="palette" className="flex-1">Palette</TabsTrigger>
                     <TabsTrigger value="copilot" className="flex-1">Co-Pilot</TabsTrigger>
@@ -128,7 +131,7 @@ const Index = () => {
             {/* Right Sidebar - Inspector & Simulation */}
             <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
               <div className="h-full border-l border-border bg-card flex flex-col">
-                <Tabs defaultValue="inspector" className="flex-1 flex flex-col overflow-hidden">
+                <Tabs value={activeRightTab} onValueChange={setActiveRightTab} className="flex-1 flex flex-col overflow-hidden">
                   <TabsList className="w-full rounded-none border-b shrink-0">
                     <TabsTrigger value="inspector" className="flex-1">
                       <Info className="h-4 w-4 mr-2" />
@@ -143,7 +146,7 @@ const Index = () => {
                     <InspectorPanel />
                   </TabsContent>
                   <TabsContent value="simulation" className="flex-1 m-0 overflow-hidden">
-                    <SimulationPanel />
+                    <SimulationPanel onSwitchToCopilot={() => setActiveLeftTab('copilot')} />
                   </TabsContent>
                 </Tabs>
               </div>

@@ -23,6 +23,9 @@ interface GraphState {
   activeEdgeIds: string[];
   simulationHistory: SimulationResult[];
   simulationStatus: string | null;
+  copilotMessage: string | null;
+  
+  setCopilotMessage: (message: string | null) => void;
   
   setNodes: (nodes: Node<NodeData>[]) => void;
   setEdges: (edges: Edge<EdgeData>[]) => void;
@@ -60,6 +63,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   activeEdgeIds: [],
   simulationHistory: [],
   simulationStatus: null,
+  copilotMessage: null,
 
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
@@ -68,6 +72,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   setActiveWorkflowRun: (runId) => set({ activeWorkflowRun: runId }),
   setActiveNodeId: (nodeId) => set({ activeNodeId: nodeId }),
   setActiveEdgeIds: (edgeIds) => set({ activeEdgeIds: edgeIds }),
+  setCopilotMessage: (message) => set({ copilotMessage: message }),
 
   fetchGraph: async () => {
     set({ isLoading: true });

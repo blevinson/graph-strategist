@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, CheckCircle2, XCircle, Activity, Zap, Loader2, Send } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Activity, Zap, Loader2, Send, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
@@ -19,10 +19,15 @@ interface SimulationResult {
   status: 'completed' | 'failed';
 }
 
-export const SimulationPanel = () => {
+interface SimulationPanelProps {
+  onSwitchToCopilot: () => void;
+}
+
+export const SimulationPanel = ({ onSwitchToCopilot }: SimulationPanelProps) => {
   const [scenario, setScenario] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [simulationHistory, setSimulationHistory] = useState<SimulationResult[]>([]);
+  const { setCopilotMessage } = useGraphStore();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -119,6 +124,18 @@ export const SimulationPanel = () => {
     } finally {
       setIsRunning(false);
     }
+  };
+
+  const handleSendToCopilot = (simulation: SimulationResult, onSwitchTab: () => void) => {
+    const message = `Based on this simulation, please help me fix the identified issues:\n\n**Scenario:** ${simulation.scenario}\n\n**Analysis:**\n${simulation.analysis}\n\nPlease provide specific recommendations and help me implement fixes for these issues.`;
+    
+    setCopilotMessage(message);
+    onSwitchTab();
+    
+    toast({
+      title: "Sent to Co-Pilot",
+      description: "Switching to Co-Pilot tab for AI assistance"
+    });
   };
 
   return (
@@ -221,6 +238,18 @@ export const SimulationPanel = () => {
                   <div className="text-sm text-foreground bg-muted/30 p-3 rounded-md prose prose-sm max-w-none dark:prose-invert">
                     <ReactMarkdown>{sim.analysis}</ReactMarkdown>
                   </div>
+                  
+                  {sim.status === 'completed' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2 w-full gap-2"
+                      onClick={() => handleSendToCopilot(sim, onSwitchToCopilot)}
+                    >
+                      <MessageSquare className="h-3 w-3" />
+                      Send to Co-Pilot for Fixes
+                    </Button>
+                  )}
                 </div>
 
                 {sim.tool_results && sim.tool_results.length > 0 && (
