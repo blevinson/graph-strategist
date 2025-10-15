@@ -55,27 +55,36 @@ export type Database = {
       }
       nodes: {
         Row: {
+          context: Json | null
           created_at: string | null
           id: string
+          inputs: Json | null
           label: string
+          outputs: Json | null
           props: Json
           updated_at: string | null
           x: number | null
           y: number | null
         }
         Insert: {
+          context?: Json | null
           created_at?: string | null
           id?: string
+          inputs?: Json | null
           label: string
+          outputs?: Json | null
           props?: Json
           updated_at?: string | null
           x?: number | null
           y?: number | null
         }
         Update: {
+          context?: Json | null
           created_at?: string | null
           id?: string
+          inputs?: Json | null
           label?: string
+          outputs?: Json | null
           props?: Json
           updated_at?: string | null
           x?: number | null
@@ -130,6 +139,44 @@ export type Database = {
             columns: ["workflow_run_id"]
             isOneToOne: false
             referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategic_insights: {
+        Row: {
+          confidence: number | null
+          content: string
+          created_at: string | null
+          id: string
+          insight_type: string
+          metadata: Json | null
+          node_id: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          content: string
+          created_at?: string | null
+          id?: string
+          insight_type: string
+          metadata?: Json | null
+          node_id?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          insight_type?: string
+          metadata?: Json | null
+          node_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_insights_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
             referencedColumns: ["id"]
           },
         ]

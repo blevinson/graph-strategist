@@ -3,6 +3,7 @@ import InspectorPanel from '@/components/inspector/InspectorPanel';
 import SearchBar from '@/components/toolbar/SearchBar';
 import AddNodeFAB from '@/components/toolbar/AddNodeFAB';
 import { WorkflowsDrawer } from '@/components/workflows/WorkflowsDrawer';
+import { StrategyPanel } from '@/components/strategy/StrategyPanel';
 import { ReactFlowProvider } from 'reactflow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -30,12 +31,16 @@ const Index = () => {
               <TabsList className="w-full rounded-none border-b">
                 <TabsTrigger value="inspector" className="flex-1">Inspector</TabsTrigger>
                 <TabsTrigger value="workflows" className="flex-1">Workflows</TabsTrigger>
+                <TabsTrigger value="strategy" className="flex-1">Strategy</TabsTrigger>
               </TabsList>
               <TabsContent value="inspector" className="flex-1 overflow-auto m-0">
                 <InspectorPanel />
               </TabsContent>
               <TabsContent value="workflows" className="flex-1 overflow-auto m-0">
                 <WorkflowsDrawer />
+              </TabsContent>
+              <TabsContent value="strategy" className="flex-1 overflow-hidden m-0">
+                <StrategyPanel />
               </TabsContent>
             </Tabs>
           </div>
