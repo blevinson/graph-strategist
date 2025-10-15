@@ -75,6 +75,11 @@ export default function WorkflowPanel() {
       setRuns(prev => ({ ...prev, [workflowId]: data }));
       toast.success('Workflow started successfully');
       
+      // Trigger the workflow runner
+      await supabase.functions.invoke('workflow-runner', {
+        method: 'POST'
+      });
+      
       // Poll for updates
       pollWorkflowStatus(data.id, workflowId);
     } catch (error) {
