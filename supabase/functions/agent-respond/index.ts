@@ -436,9 +436,9 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
 **Edge types:** triggers (signal→task/agent/decision), depends_on (task→task/goal), leads_to (task→outcome), branches_to (decision→task/outcome), mitigates (task→risk), uses (task/agent→tool)`
     };
 
-    // Build messages array with conversation history
+    // Build messages array with conversation history + new prompt
     const userMessages = conversationHistory && conversationHistory.length > 0
-      ? conversationHistory.filter((m: any) => m.role === 'user' || m.role === 'assistant')
+      ? [...conversationHistory.filter((m: any) => m.role === 'user' || m.role === 'assistant'), { role: "user", content: prompt }]
       : [{ role: "user", content: prompt }];
 
     // Call Claude with tool calling
