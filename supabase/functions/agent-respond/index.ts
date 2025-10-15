@@ -130,6 +130,83 @@ const tools = [
         required: ["signal_id"],
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_workflow",
+      description: "Create a new workflow with steps",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Workflow name" },
+          mode: { type: "string", enum: ["SEQUENTIAL", "DAG"], description: "Execution mode (SEQUENTIAL or DAG)" },
+          steps: {
+            type: "array",
+            description: "Array of workflow steps",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Step name" },
+                type: { 
+                  type: "string", 
+                  enum: ["DELAY", "HTTP_REQUEST", "SET_NODE_PROP", "CREATE_EDGE", "DELETE_EDGE", "SQL_QUERY"],
+                  description: "Step type"
+                },
+                config: { type: "object", description: "Step configuration" },
+                depends_on: { 
+                  type: "array", 
+                  items: { type: "string" },
+                  description: "IDs of steps this step depends on (for DAG mode)"
+                }
+              },
+              required: ["name", "type", "config"]
+            }
+          }
+        },
+        required: ["name", "mode", "steps"],
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "run_workflow",
+      description: "Execute a workflow by name or ID",
+      parameters: {
+        type: "object",
+        properties: {
+          workflow_name_or_id: { type: "string", description: "Workflow name or UUID" }
+        },
+        required: ["workflow_name_or_id"],
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_workflows",
+      description: "List all available workflows",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_workflow_run_status",
+      description: "Get the status of a workflow run",
+      parameters: {
+        type: "object",
+        properties: {
+          run_id: { type: "string", description: "Workflow run UUID" }
+        },
+        required: ["run_id"],
+      }
+    }
   }
 ];
 
@@ -232,6 +309,97 @@ async function executeTool(toolName: string, args: any) {
         .eq('label', 'Goal');
       
       return goals || [];
+    }
+    
+    case "create_workflow": {
+      const { name, mode, steps } = args;
+      
+      // Create workflow
+      const { data: workflow, error: wfError } = await supabase
+        .from('workflows')
+        .insert({ name, mode })
+        .select()
+        .single();
+
+      if (wfError) throw wfError;
+
+      // Create steps
+      const stepsData = steps.map((step: any) => ({
+        workflow_id: workflow.id,
+        name: step.name,
+        type: step.type,
+        config: step.config || {},
+        depends_on: step.depends_on || []
+      }));
+
+      const { error: stepsError } = await supabase
+        .from('workflow_steps')
+        .insert(stepsData);
+
+      if (stepsError) throw stepsError;
+
+      return { 
+        success: true, 
+        workflow_id: workflow.id, 
+        name: workflow.name,
+        steps_count: steps.length 
+      };
+    }
+
+    case "run_workflow": {
+      const searchTerm = args.workflow_name_or_id;
+      
+      // Try to find workflow by name or ID
+      const { data: workflows, error: wfError } = await supabase
+        .from('workflows')
+        .select('id')
+        .or(`name.eq.${searchTerm},id.eq.${searchTerm}`)
+        .limit(1);
+
+      if (wfError || !workflows || workflows.length === 0) {
+        throw new Error(`Workflow not found: ${searchTerm}`);
+      }
+
+      const workflowId = workflows[0].id;
+
+      // Create a workflow run
+      const { data: run, error: runError } = await supabase
+        .from('workflow_runs')
+        .insert({ workflow_id: workflowId, status: 'queued', log: { events: [] } })
+        .select()
+        .single();
+
+      if (runError) throw runError;
+
+      return { 
+        success: true, 
+        run_id: run.id, 
+        status: run.status,
+        message: `Workflow queued for execution. Run ID: ${run.id}` 
+      };
+    }
+
+    case "list_workflows": {
+      const { data: workflows, error } = await supabase
+        .from('workflows')
+        .select('id, name, mode, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return { workflows };
+    }
+
+    case "get_workflow_run_status": {
+      const { data: run, error } = await supabase
+        .from('workflow_runs')
+        .select('*')
+        .eq('id', args.run_id)
+        .single();
+
+      if (error) throw error;
+
+      return run;
     }
     
     default:

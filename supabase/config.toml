@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.agent-respond]
 verify_jwt = false
+
+[functions.workflow-api]
+verify_jwt = false
+
+[functions.workflow-runner]
+verify_jwt = false
