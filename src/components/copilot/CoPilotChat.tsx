@@ -121,7 +121,7 @@ export const CoPilotChat = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4" ref={scrollRef}>
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 custom-scrollbar" ref={scrollRef}>
         <div className="space-y-4 pb-24">
           {messages.map((message, index) => (
             <div
