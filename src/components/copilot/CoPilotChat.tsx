@@ -28,15 +28,11 @@ export const CoPilotChat = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { fetchGraph } = useGraphStore();
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = async () => {
@@ -194,6 +190,7 @@ export const CoPilotChat = () => {
               </Card>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
