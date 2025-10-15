@@ -13,207 +13,171 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Tool definitions
+// Tool definitions for Claude API
 const tools = [
   {
-    type: "function",
-    function: {
-      name: "query_graph",
-      description: "Returns all nodes and edges in the graph",
-      parameters: {
-        type: "object",
-        properties: {},
-        required: [],
-      }
+    name: "query_graph",
+    description: "Returns all nodes and edges in the graph",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: [],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "create_node",
-      description: "Create a new node with a label and properties. Use consumer-friendly node types: goal (⭐ what user wants), task (⚙️ steps to reach goals), decision (🔀 branch points), signal (🔔 triggers), outcome (✅ results), risk (⚠️ problems), agent (🤖 AI helpers), tool (🧰 apps/services)",
-      parameters: {
-        type: "object",
-        properties: {
-          label: { 
-            type: "string", 
-            enum: ["goal", "task", "decision", "signal", "outcome", "risk", "agent", "tool"],
-            description: "Node type - use lowercase: goal, task, decision, signal, outcome, risk, agent, tool" 
-          },
-          name: { type: "string", description: "Node name" },
-          description: { type: "string", description: "Node description" },
-          props: { type: "object", description: "Additional properties as JSON" }
+    name: "create_node",
+    description: "Create a new node with a label and properties. Use consumer-friendly node types: goal (⭐ what user wants), task (⚙️ steps to reach goals), decision (🔀 branch points), signal (🔔 triggers), outcome (✅ results), risk (⚠️ problems), agent (🤖 AI helpers), tool (🧰 apps/services)",
+    input_schema: {
+      type: "object",
+      properties: {
+        label: { 
+          type: "string", 
+          enum: ["goal", "task", "decision", "signal", "outcome", "risk", "agent", "tool"],
+          description: "Node type - use lowercase: goal, task, decision, signal, outcome, risk, agent, tool" 
         },
-        required: ["label", "name"],
-      }
+        name: { type: "string", description: "Node name" },
+        description: { type: "string", description: "Node description" },
+        props: { type: "object", description: "Additional properties as JSON" }
+      },
+      required: ["label", "name"],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "patch_node",
-      description: "Update properties of an existing node",
-      parameters: {
-        type: "object",
-        properties: {
-          node_id: { type: "string", description: "UUID of the node to update" },
-          props: { type: "object", description: "Properties to update" }
-        },
-        required: ["node_id", "props"],
-      }
+    name: "patch_node",
+    description: "Update properties of an existing node",
+    input_schema: {
+      type: "object",
+      properties: {
+        node_id: { type: "string", description: "UUID of the node to update" },
+        props: { type: "object", description: "Properties to update" }
+      },
+      required: ["node_id", "props"],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "delete_node",
-      description: "Delete a node and its related edges",
-      parameters: {
-        type: "object",
-        properties: {
-          node_id: { type: "string", description: "UUID of the node to delete" }
-        },
-        required: ["node_id"],
-      }
+    name: "delete_node",
+    description: "Delete a node and its related edges",
+    input_schema: {
+      type: "object",
+      properties: {
+        node_id: { type: "string", description: "UUID of the node to delete" }
+      },
+      required: ["node_id"],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "create_edge",
-      description: "Connect two nodes with a relationship",
-      parameters: {
-        type: "object",
-        properties: {
-          source: { type: "string", description: "UUID of source node" },
-          target: { type: "string", description: "UUID of target node" },
-          type: { 
-            type: "string",
-            enum: ["depends_on", "leads_to", "triggers", "branches_to", "mitigates", "uses"],
-            description: "Relationship type - use lowercase: depends_on (task depends on task/goal), leads_to (task leads to outcome), triggers (signal triggers task/agent/decision), branches_to (decision branches to task/outcome), mitigates (task mitigates risk), uses (task/agent uses tool)" 
-          }
-        },
-        required: ["source", "target", "type"],
-      }
+    name: "create_edge",
+    description: "Connect two nodes with a relationship",
+    input_schema: {
+      type: "object",
+      properties: {
+        source: { type: "string", description: "UUID of source node" },
+        target: { type: "string", description: "UUID of target node" },
+        type: { 
+          type: "string",
+          enum: ["depends_on", "leads_to", "triggers", "branches_to", "mitigates", "uses"],
+          description: "Relationship type - use lowercase: depends_on (task depends on task/goal), leads_to (task leads to outcome), triggers (signal triggers task/agent/decision), branches_to (decision branches to task/outcome), mitigates (task mitigates risk), uses (task/agent uses tool)" 
+        }
+      },
+      required: ["source", "target", "type"],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "delete_edge",
-      description: "Delete an edge between two nodes",
-      parameters: {
-        type: "object",
-        properties: {
-          edge_id: { type: "string", description: "UUID of the edge to delete" }
-        },
-        required: ["edge_id"],
-      }
+    name: "delete_edge",
+    description: "Delete an edge between two nodes",
+    input_schema: {
+      type: "object",
+      properties: {
+        edge_id: { type: "string", description: "UUID of the edge to delete" }
+      },
+      required: ["edge_id"],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "get_blockers_for_goal",
-      description: "Get all risks blocking a specific goal",
-      parameters: {
-        type: "object",
-        properties: {
-          goal_id: { type: "string", description: "UUID of the goal" }
-        },
-        required: ["goal_id"],
-      }
+    name: "get_blockers_for_goal",
+    description: "Get all risks blocking a specific goal",
+    input_schema: {
+      type: "object",
+      properties: {
+        goal_id: { type: "string", description: "UUID of the goal" }
+      },
+      required: ["goal_id"],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "impacted_goals_from_signal",
-      description: "Get all goals impacted by a specific signal",
-      parameters: {
-        type: "object",
-        properties: {
-          signal_id: { type: "string", description: "UUID of the signal" }
-        },
-        required: ["signal_id"],
-      }
+    name: "impacted_goals_from_signal",
+    description: "Get all goals impacted by a specific signal",
+    input_schema: {
+      type: "object",
+      properties: {
+        signal_id: { type: "string", description: "UUID of the signal" }
+      },
+      required: ["signal_id"],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "create_workflow",
-      description: "Create a new workflow with steps",
-      parameters: {
-        type: "object",
-        properties: {
-          name: { type: "string", description: "Workflow name" },
-          mode: { type: "string", enum: ["SEQUENTIAL", "DAG"], description: "Execution mode (SEQUENTIAL or DAG)" },
-          steps: {
-            type: "array",
-            description: "Array of workflow steps",
-            items: {
-              type: "object",
-              properties: {
-                name: { type: "string", description: "Step name" },
-                type: { 
-                  type: "string", 
-                  enum: ["DELAY", "HTTP_REQUEST", "SET_NODE_PROP", "CREATE_EDGE", "DELETE_EDGE", "SQL_QUERY"],
-                  description: "Step type"
-                },
-                config: { type: "object", description: "Step configuration" },
-                depends_on: { 
-                  type: "array", 
-                  items: { type: "string" },
-                  description: "IDs of steps this step depends on (for DAG mode)"
-                }
+    name: "create_workflow",
+    description: "Create a new workflow with steps",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Workflow name" },
+        mode: { type: "string", enum: ["SEQUENTIAL", "DAG"], description: "Execution mode (SEQUENTIAL or DAG)" },
+        steps: {
+          type: "array",
+          description: "Array of workflow steps",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string", description: "Step name" },
+              type: { 
+                type: "string", 
+                enum: ["DELAY", "HTTP_REQUEST", "SET_NODE_PROP", "CREATE_EDGE", "DELETE_EDGE", "SQL_QUERY"],
+                description: "Step type"
               },
-              required: ["name", "type", "config"]
-            }
+              config: { type: "object", description: "Step configuration" },
+              depends_on: { 
+                type: "array", 
+                items: { type: "string" },
+                description: "IDs of steps this step depends on (for DAG mode)"
+              }
+            },
+            required: ["name", "type", "config"]
           }
-        },
-        required: ["name", "mode", "steps"],
-      }
+        }
+      },
+      required: ["name", "mode", "steps"],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "run_workflow",
-      description: "Execute a workflow by name or ID",
-      parameters: {
-        type: "object",
-        properties: {
-          workflow_name_or_id: { type: "string", description: "Workflow name or UUID" }
-        },
-        required: ["workflow_name_or_id"],
-      }
+    name: "run_workflow",
+    description: "Execute a workflow by name or ID",
+    input_schema: {
+      type: "object",
+      properties: {
+        workflow_name_or_id: { type: "string", description: "Workflow name or UUID" }
+      },
+      required: ["workflow_name_or_id"],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "list_workflows",
-      description: "List all available workflows",
-      parameters: {
-        type: "object",
-        properties: {},
-        required: [],
-      }
+    name: "list_workflows",
+    description: "List all available workflows",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: [],
     }
   },
   {
-    type: "function",
-    function: {
-      name: "get_workflow_run_status",
-      description: "Get the status of a workflow run",
-      parameters: {
-        type: "object",
-        properties: {
-          run_id: { type: "string", description: "Workflow run UUID" }
-        },
-        required: ["run_id"],
-      }
+    name: "get_workflow_run_status",
+    description: "Get the status of a workflow run",
+    input_schema: {
+      type: "object",
+      properties: {
+        run_id: { type: "string", description: "Workflow run UUID" }
+      },
+      required: ["run_id"],
     }
   }
 ];
