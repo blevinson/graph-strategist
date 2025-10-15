@@ -4,6 +4,7 @@ import SearchBar from '@/components/toolbar/SearchBar';
 import AddNodeFAB from '@/components/toolbar/AddNodeFAB';
 import { SimulationPanel } from '@/components/simulation/SimulationPanel';
 import { NodePalette } from '@/components/graph/NodePalette';
+import { CoPilotChat } from '@/components/copilot/CoPilotChat';
 import { ReactFlowProvider } from 'reactflow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -52,9 +53,20 @@ const Index = () => {
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Sidebar - Node Palette */}
-          <div className="w-72 border-r border-border bg-card p-4 overflow-auto">
-            <NodePalette />
+          {/* Left Sidebar - Palette & Co-Pilot */}
+          <div className="w-72 border-r border-border bg-card overflow-hidden flex flex-col">
+            <Tabs defaultValue="palette" className="flex-1 flex flex-col">
+              <TabsList className="w-full rounded-none border-b shrink-0">
+                <TabsTrigger value="palette" className="flex-1">Palette</TabsTrigger>
+                <TabsTrigger value="copilot" className="flex-1">Co-Pilot</TabsTrigger>
+              </TabsList>
+              <TabsContent value="palette" className="flex-1 overflow-auto m-0 p-4">
+                <NodePalette />
+              </TabsContent>
+              <TabsContent value="copilot" className="flex-1 m-0 h-0 flex flex-col">
+                <CoPilotChat />
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Graph Canvas */}
