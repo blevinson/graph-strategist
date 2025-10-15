@@ -9,7 +9,15 @@ import { Zap, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const CustomNode = memo(({ data, id }: NodeProps<NodeData>) => {
-  const config = nodeTypeConfig[data.label];
+  const config = nodeTypeConfig[data.label as NodeType];
+  
+  // Fallback for legacy/unknown node types (e.g., old 'capability' nodes)
+  const nodeConfig = config || {
+    emoji: '❓',
+    color: 'hsl(var(--muted))',
+    label: data.label || 'Unknown'
+  };
+  
   const setSelectedNode = useGraphStore((state) => state.setSelectedNode);
   const { createNode, createEdge, nodes } = useGraphStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -123,8 +131,8 @@ const CustomNode = memo(({ data, id }: NodeProps<NodeData>) => {
         useGraphStore.getState().activeNodeId === id ? 'workflow-node-active' : ''
       }`}
       style={{
-        borderColor: config.color,
-        boxShadow: `0 4px 20px ${config.color}40`,
+        borderColor: nodeConfig.color,
+        boxShadow: `0 4px 20px ${nodeConfig.color}40`,
       }}
     >
       <Handle
@@ -136,9 +144,9 @@ const CustomNode = memo(({ data, id }: NodeProps<NodeData>) => {
       
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{config.emoji}</span>
+          <span className="text-2xl">{nodeConfig.emoji}</span>
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            {config.label}
+            {nodeConfig.label}
           </span>
         </div>
         {workflowCount > 0 && (
