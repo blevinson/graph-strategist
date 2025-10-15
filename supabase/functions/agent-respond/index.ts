@@ -583,6 +583,8 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
       }
       // Case 2: Only deleted - user wants to create after
       else if (hasDeletes && prompt.toLowerCase().includes('create')) {
+        console.log("Detected delete+create scenario, making follow-up call to create nodes");
+        
         const createResp = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: { 
@@ -593,14 +595,20 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
           body: JSON.stringify({ 
             model: 'claude-sonnet-4-5',
             max_tokens: 4096,
-            messages: [{ role: 'user', content: `Deleted. Now CREATE: "${prompt}"` }],
+            messages: [{ 
+              role: 'user', 
+              content: `I deleted the old nodes. Now CREATE the new nodes for this request: "${prompt}"\n\nYou MUST create ALL nodes mentioned in the request. Use create_node for each one.` 
+            }],
             system: messages[0].content,
             tools 
           })
         });
 
+        console.log("Create response status:", createResp.status);
+
         if (createResp.ok) {
           const createData = await createResp.json();
+          console.log("Create response:", JSON.stringify(createData, null, 2));
           const newNodeIds: string[] = [];
           
           // Parse Claude tool calls
@@ -612,12 +620,16 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
                 if (content.name === 'create_node' && result?.id) {
                   newNodeIds.push(`${result.props.name} (ID: ${result.id})`);
                 }
-              } catch (e) { console.error(e); }
+              } catch (e) { 
+                console.error("Create node error:", e); 
+              }
             }
           }
           
           // Now edges
           if (newNodeIds.length > 0) {
+            console.log(`Created ${newNodeIds.length} nodes, now creating edges`);
+            
             const edgeResp2 = await fetch('https://api.anthropic.com/v1/messages', {
               method: 'POST',
               headers: { 
@@ -628,24 +640,40 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
               body: JSON.stringify({ 
                 model: 'claude-sonnet-4-5',
                 max_tokens: 4096,
-                messages: [{ role: 'user', content: `Created:\n${newNodeIds.join('\n')}\n\nNow edges for: "${prompt}"` }],
+                messages: [{ 
+                  role: 'user', 
+                  content: `Created these nodes:\n${newNodeIds.join('\n')}\n\n**CRITICAL: Now create ALL the edges for this request: "${prompt}"\n\nYou MUST call create_edge for EVERY connection. Do NOT skip any connections!**` 
+                }],
                 system: messages[0].content,
-                tools 
+                tools,
+                tool_choice: { type: "any" }
               })
             });
 
+            console.log("Edge creation (2nd) response status:", edgeResp2.status);
+
             if (edgeResp2.ok) {
               const edgeData2 = await edgeResp2.json();
+              console.log("Edge creation (2nd) response:", JSON.stringify(edgeData2, null, 2));
+              
               for (const content of edgeData2.content) {
                 if (content.type === 'tool_use') {
                   try {
-                    await executeTool(content.name, content.input);
-                  } catch (e) { console.error(e); }
+                    const result = await executeTool(content.name, content.input);
+                    console.log(`Created edge:`, content.input);
+                    toolResults.push({ tool: content.name, result });
+                  } catch (e) { 
+                    console.error("Edge creation error:", e); 
+                  }
                 }
               }
+            } else {
+              console.error("Edge creation (2nd) failed:", await edgeResp2.text());
             }
           }
           outputText = "Deleted old nodes, created new ones with connections!";
+        } else {
+          console.error("Create request failed:", await createResp.text());
         }
       }
     }
