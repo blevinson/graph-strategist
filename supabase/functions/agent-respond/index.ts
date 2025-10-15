@@ -444,34 +444,28 @@ serve(async (req) => {
 
 ${graphContext}
 
-**CRITICAL RULES:**
-1. NEVER delete nodes when user asks to modify/update/change them
-2. ALWAYS use patch_node to UPDATE existing nodes
-3. ONLY use delete_node when user explicitly says "delete" or "remove"
-4. When modifying, keep all existing connections intact
+🚨 **CRITICAL: NEVER DELETE NODES UNLESS USER EXPLICITLY SAYS "DELETE" OR "REMOVE"!** 🚨
+
+When user says "change", "update", "modify", "rename" → USE patch_node (keeps connections!)
+When user says "delete", "remove" → USE delete_node (removes connections)
+When user says "add", "create" → USE create_node
 
 **YOUR TOOLS:**
-- create_node - ONLY for adding NEW nodes
-- patch_node - UPDATE existing node properties (preserves all connections!)
-- delete_node - ONLY when user explicitly asks to delete
-- create_edge - add connections
-- delete_edge - remove connections
+- patch_node({node_id: "xxx", props: {name: "new name", ...}}) - Updates node, KEEPS ALL EDGES
+- delete_node({node_id: "xxx"}) - Deletes node AND all its edges (use sparingly!)
+- create_node({label: "task", name: "...", ...}) - Creates new node
+- create_edge({source: "xxx", target: "yyy", type: "triggers"}) - Connects nodes
+- delete_edge({edge_id: "zzz"}) - Removes connection
 
-**EXAMPLES:**
+**RIGHT WAY (user says "change X to Y"):**
+1. Find node ID for X from graph above
+2. Call: patch_node({node_id: "found-id", props: {name: "Y"}})
+✅ Node updated, all edges preserved!
 
-User: "Change validate email to send welcome email"
-→ Find "validate email" node ID from graph above
-→ Call: patch_node({node_id: "xxx", props: {name: "send welcome email"}})
-✓ Keeps all connections intact!
-
-User: "Update the decision to email verified?"  
-→ Find decision node ID
-→ Call: patch_node({node_id: "yyy", props: {name: "email verified?"}})
-✓ Keeps all connections intact!
-
-User: "Delete the signal"
-→ Find signal node ID
-→ Call: delete_node({node_id: "zzz"})
+**WRONG WAY (DON'T DO THIS):**
+1. delete_node({node_id: "xxx"})
+2. create_node({label: "task", name: "Y"})
+❌ All edges are gone! Node is disconnected!
 
 **Node types:** signal, task, decision, outcome, goal, risk, agent, tool
 **Edge types:** triggers, depends_on, leads_to, branches_to, mitigates, uses`
