@@ -519,10 +519,16 @@ MAKE ALL TOOL CALLS AT ONCE!`
       }
     }
 
-    // If there were tool calls, make a second request to get the final response
+    // If there were tool calls, make a second request with tools available to create edges
     let outputText = message.content || "";
     
     if (toolCalls.length > 0) {
+      // Build context message with node IDs for creating edges
+      const nodeIds = toolResults
+        .filter(r => r.tool === 'create_node' && r.result?.id)
+        .map((r, i) => `Node ${i + 1}: ${r.result.props.name} (ID: ${r.result.id})`)
+        .join('\n');
+
       const followUpMessages = [
         ...messages,
         message,
@@ -530,7 +536,11 @@ MAKE ALL TOOL CALLS AT ONCE!`
           role: "tool",
           tool_call_id: tc.id,
           content: JSON.stringify(toolResults[i].result || toolResults[i].error)
-        }))
+        })),
+        {
+          role: "user",
+          content: `Node IDs created:\n${nodeIds}\n\nNow create edges to connect these nodes using create_edge with the IDs above.`
+        }
       ];
 
       const followUpResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -541,13 +551,37 @@ MAKE ALL TOOL CALLS AT ONCE!`
         },
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash',
-          messages: followUpMessages
+          messages: followUpMessages,
+          tools,
+          tool_choice: { type: "auto" }
         }),
       });
 
       if (followUpResponse.ok) {
         const followUpData = await followUpResponse.json();
-        outputText = followUpData.choices[0].message.content;
+        const followUpMessage = followUpData.choices[0].message;
+        const followUpToolCalls = followUpMessage.tool_calls || [];
+        
+        // Execute second round of tool calls (edges)
+        for (const toolCall of followUpToolCalls) {
+          try {
+            const args = JSON.parse(toolCall.function.arguments);
+            const result = await executeTool(toolCall.function.name, args);
+            toolResults.push({
+              tool: toolCall.function.name,
+              args,
+              result
+            });
+          } catch (error) {
+            console.error(`Tool execution error for ${toolCall.function.name}:`, error);
+            toolResults.push({
+              tool: toolCall.function.name,
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+        
+        outputText = followUpMessage.content || "Created nodes and edges!";
       }
     }
 
