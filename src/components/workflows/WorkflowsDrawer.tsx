@@ -131,7 +131,7 @@ export function WorkflowsDrawer() {
       const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
       const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/workflow-api/${workflowId}/run`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/workflow-api/workflows/${workflowId}/run`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
