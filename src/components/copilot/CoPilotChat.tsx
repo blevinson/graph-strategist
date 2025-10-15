@@ -31,13 +31,19 @@ export const CoPilotChat = () => {
   const { fetchGraph } = useGraphStore();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const scrollToBottom = () => {
+      const element = scrollRef.current;
+      if (element) {
+        console.log('Scrolling - scrollHeight:', element.scrollHeight, 'scrollTop:', element.scrollTop);
+        element.scrollTop = element.scrollHeight;
+        console.log('After scroll - scrollTop:', element.scrollTop);
       }
-    }, 0);
+    };
     
-    return () => clearTimeout(timer);
+    // Multiple approaches to ensure scroll happens
+    scrollToBottom();
+    setTimeout(scrollToBottom, 0);
+    setTimeout(scrollToBottom, 100);
   }, [messages, isLoading]);
 
   const handleSend = async () => {
