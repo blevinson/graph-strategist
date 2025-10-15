@@ -429,36 +429,46 @@ serve(async (req) => {
 
     console.log("Received prompt:", prompt);
 
+    // Query current graph state to provide context
+    const { data: existingNodes } = await supabase.from('nodes').select('*');
+    const { data: existingEdges } = await supabase.from('edges').select('*');
+    
+    const graphContext = existingNodes && existingNodes.length > 0
+      ? `\n\n**CURRENT GRAPH STATE:**\nNodes (${existingNodes.length}):\n${existingNodes.map(n => `- ${n.label}: "${n.props.name}" (ID: ${n.id})`).join('\n')}\n\nEdges (${existingEdges?.length || 0}):\n${existingEdges?.map(e => `- ${e.type}: ${e.source} → ${e.target}`).join('\n') || 'None'}`
+      : '\n\n**CURRENT GRAPH STATE:** Empty canvas - no nodes or edges yet.';
+
     const messages = [
       {
         role: "system",
-        content: `You are a workflow builder. When user asks to create nodes, you MUST call create_node and create_edge tools IMMEDIATELY in PARALLEL - make ALL tool calls in ONE response.
+        content: `You are a Graph Strategist co-pilot. You help users build and modify their strategy graph.
 
-DO NOT call query_graph first! Just create what user wants!
+${graphContext}
 
-**PARALLEL TOOL CALLS REQUIRED:**
-For "create signal X that triggers task Y":
-- Call create_node (signal X) 
-- Call create_node (task Y)
-- Call create_edge (signal→task, type="triggers")
-ALL IN THE SAME RESPONSE!
+**YOUR CAPABILITIES:**
+1. query_graph - see current state (already shown above)
+2. create_node - add new nodes
+3. patch_node - UPDATE existing nodes (use the ID from graph state)
+4. delete_node - remove nodes
+5. create_edge - connect nodes
+6. delete_edge - remove connections
+
+**WHEN USER ASKS TO MODIFY:**
+- "Update X" or "Change X" → use patch_node with the node's ID
+- "Delete X" or "Remove X" → use delete_node with the node's ID
+- "Add X" → use create_node
 
 **Node types:** signal, task, decision, outcome, goal, risk, agent, tool (lowercase)
 **Edge types:** triggers, depends_on, leads_to, branches_to, mitigates, uses (lowercase)
 
-**Example response for "user clicks signup → validate email → decision → create account OR show error":**
-Make 5 create_node calls + 4 create_edge calls in ONE response:
-- create_node: label="signal", name="user clicks signup"
-- create_node: label="task", name="validate email"  
-- create_node: label="decision", name="email valid?"
-- create_node: label="task", name="create account"
-- create_node: label="task", name="show error"
-- create_edge: source=[signal_id], target=[task1_id], type="triggers"
-- create_edge: source=[task1_id], target=[decision_id], type="leads_to"
-- create_edge: source=[decision_id], target=[task2_id], type="branches_to"
-- create_edge: source=[decision_id], target=[task3_id], type="branches_to"
+**EXAMPLE - User says "change validate email to send welcome email":**
+1. Find node ID from graph state above
+2. Call patch_node with ID and new name: {node_id: "xxx", props: {name: "send welcome email"}}
 
-MAKE ALL TOOL CALLS AT ONCE!`
+**EXAMPLE - User says "delete the decision":**
+1. Find decision node ID from graph state
+2. Call delete_node with that ID
+
+Be smart about existing vs new nodes!`
       },
       {
         role: "user",
