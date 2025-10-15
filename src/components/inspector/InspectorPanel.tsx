@@ -15,7 +15,6 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function InspectorPanel() {
   const {
@@ -184,8 +183,8 @@ export default function InspectorPanel() {
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-6">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 custom-scrollbar">
+        <div className="space-y-6 pb-24">
         {/* Node Details */}
         <div className="space-y-4">
           <div>
@@ -428,7 +427,7 @@ export default function InspectorPanel() {
         </Collapsible>
         </div>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

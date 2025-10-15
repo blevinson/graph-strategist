@@ -77,7 +77,7 @@ const Index = () => {
           </div>
 
           {/* Right Sidebar - Inspector & Simulation */}
-          <div className="w-96 border-l border-border bg-card overflow-hidden flex flex-col">
+          <div className="w-96 border-l border-border bg-card flex flex-col">
             <Tabs defaultValue="inspector" className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="w-full rounded-none border-b shrink-0">
                 <TabsTrigger value="inspector" className="flex-1">
@@ -89,10 +89,10 @@ const Index = () => {
                   Simulation
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="inspector" className="flex-1 m-0 h-0 flex flex-col overflow-hidden">
+              <TabsContent value="inspector" className="flex-1 m-0 overflow-hidden">
                 <InspectorPanel />
               </TabsContent>
-              <TabsContent value="simulation" className="flex-1 m-0 h-0 flex flex-col overflow-hidden">
+              <TabsContent value="simulation" className="flex-1 m-0 overflow-hidden">
                 <SimulationPanel />
               </TabsContent>
             </Tabs>
