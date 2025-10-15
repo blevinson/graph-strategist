@@ -83,6 +83,106 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_runs: {
+        Row: {
+          created_at: string
+          finished_at: string | null
+          id: string
+          log: Json
+          started_at: string | null
+          status: Database["public"]["Enums"]["workflow_run_status"]
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          log?: Json
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          log?: Json
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["workflow_run_status"]
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_steps: {
+        Row: {
+          config: Json
+          created_at: string
+          depends_on: string[] | null
+          id: string
+          name: string
+          type: Database["public"]["Enums"]["workflow_step_type"]
+          workflow_id: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          depends_on?: string[] | null
+          id?: string
+          name: string
+          type: Database["public"]["Enums"]["workflow_step_type"]
+          workflow_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          depends_on?: string[] | null
+          id?: string
+          name?: string
+          type?: Database["public"]["Enums"]["workflow_step_type"]
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_steps_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflows: {
+        Row: {
+          created_at: string
+          id: string
+          mode: Database["public"]["Enums"]["workflow_mode"]
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mode?: Database["public"]["Enums"]["workflow_mode"]
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mode?: Database["public"]["Enums"]["workflow_mode"]
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -91,7 +191,20 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      workflow_mode: "SEQUENTIAL" | "DAG"
+      workflow_run_status:
+        | "queued"
+        | "running"
+        | "succeeded"
+        | "failed"
+        | "cancelled"
+      workflow_step_type:
+        | "DELAY"
+        | "HTTP_REQUEST"
+        | "SET_NODE_PROP"
+        | "CREATE_EDGE"
+        | "DELETE_EDGE"
+        | "SQL_QUERY"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -218,6 +331,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      workflow_mode: ["SEQUENTIAL", "DAG"],
+      workflow_run_status: [
+        "queued",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled",
+      ],
+      workflow_step_type: [
+        "DELAY",
+        "HTTP_REQUEST",
+        "SET_NODE_PROP",
+        "CREATE_EDGE",
+        "DELETE_EDGE",
+        "SQL_QUERY",
+      ],
+    },
   },
 } as const
