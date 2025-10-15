@@ -92,7 +92,7 @@ const Index = () => {
               <TabsContent value="inspector" className="flex-1 m-0 h-0 flex flex-col overflow-hidden">
                 <InspectorPanel />
               </TabsContent>
-              <TabsContent value="simulation" className="flex-1 m-0 h-0 flex flex-col">
+              <TabsContent value="simulation" className="flex-1 m-0 h-0 flex flex-col overflow-hidden">
                 <SimulationPanel />
               </TabsContent>
             </Tabs>
