@@ -89,7 +89,7 @@ export const StrategyPanel = () => {
         </p>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 h-0">
         <div className="p-6 space-y-6">
         {/* Quick Actions */}
         <div className="mb-6">
