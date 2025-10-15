@@ -89,7 +89,7 @@ const Index = () => {
                   Simulation
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="inspector" className="flex-1 overflow-auto m-0">
+              <TabsContent value="inspector" className="flex-1 m-0 overflow-hidden">
                 <InspectorPanel />
               </TabsContent>
               <TabsContent value="simulation" className="flex-1 m-0 h-0 flex flex-col">
