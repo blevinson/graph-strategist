@@ -8,13 +8,13 @@ import { CoPilotChat } from '@/components/copilot/CoPilotChat';
 import { ReactFlowProvider } from 'reactflow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Play, Info } from 'lucide-react';
+import { Play, Info, LayoutGrid } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useGraphStore } from '@/store/graphStore';
 import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
-  const { runSimulation } = useGraphStore();
+  const { runSimulation, nodes, updateNodePosition } = useGraphStore();
 
   const handleRunSimulation = async () => {
     try {
@@ -32,6 +32,41 @@ const Index = () => {
     }
   };
 
+  const handleAutoLayout = () => {
+    // Simple hierarchical layout algorithm
+    const nodesByType = new Map<string, typeof nodes>();
+    
+    nodes.forEach(node => {
+      const type = node.data.label;
+      if (!nodesByType.has(type)) {
+        nodesByType.set(type, []);
+      }
+      nodesByType.get(type)!.push(node);
+    });
+
+    const typeOrder = ['goal', 'milestone', 'task', 'decision', 'signal', 'blocker', 'resource'];
+    let currentY = 100;
+    const columnWidth = 300;
+    const rowHeight = 150;
+
+    typeOrder.forEach(type => {
+      const typeNodes = nodesByType.get(type) || [];
+      typeNodes.forEach((node, index) => {
+        const x = 100 + (index % 3) * columnWidth;
+        const y = currentY + Math.floor(index / 3) * rowHeight;
+        updateNodePosition(node.id, x, y);
+      });
+      if (typeNodes.length > 0) {
+        currentY += Math.ceil(typeNodes.length / 3) * rowHeight + 50;
+      }
+    });
+
+    toast({
+      title: "Layout Applied",
+      description: "Nodes have been automatically arranged",
+    });
+  };
+
   return (
     <ReactFlowProvider>
       <div className="flex flex-col h-screen bg-background">
@@ -45,6 +80,10 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-3">
             <SearchBar />
+            <Button onClick={handleAutoLayout} variant="outline" className="gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Auto Layout
+            </Button>
             <Button onClick={handleRunSimulation} className="gap-2">
               <Play className="h-4 w-4" />
               Run Simulation
