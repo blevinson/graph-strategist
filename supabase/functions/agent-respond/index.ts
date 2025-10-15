@@ -552,25 +552,43 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
           })),
           {
             role: "user",
-            content: `Created:\n${nodeIds}\n\n**NOW CREATE EDGES** based on: "${prompt}"\n\nUse create_edge for each connection.`
+            content: `Created:\n${nodeIds}\n\n**CRITICAL: You MUST call create_edge for EACH connection in this request: "${prompt}"\n\nDo NOT respond with text. ONLY use the create_edge tool multiple times.**`
           }
         ];
+
+        console.log("Requesting edge creation with node IDs:", nodeIds);
 
         const edgeResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages: edgeMessages, tools })
+          body: JSON.stringify({ 
+            model: 'google/gemini-2.5-flash', 
+            messages: edgeMessages, 
+            tools,
+            tool_choice: { type: "required" }  // Force tool usage
+          })
         });
+
+        console.log("Edge creation response status:", edgeResp.status);
 
         if (edgeResp.ok) {
           const edgeData = await edgeResp.json();
-          for (const tc of (edgeData.choices[0].message.tool_calls || [])) {
+          console.log("Edge creation AI response:", JSON.stringify(edgeData, null, 2));
+          const edgeToolCalls = edgeData.choices[0].message.tool_calls || [];
+          console.log(`Executing ${edgeToolCalls.length} edge creation calls`);
+          
+          for (const tc of edgeToolCalls) {
             try {
               const result = await executeTool(tc.function.name, JSON.parse(tc.function.arguments));
+              console.log(`Created edge: ${tc.function.name}`, JSON.parse(tc.function.arguments));
               toolResults.push({ tool: tc.function.name, args: JSON.parse(tc.function.arguments), result });
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+              console.error("Edge creation error:", e); 
+            }
           }
           outputText = "Created nodes and connected them!";
+        } else {
+          console.error("Edge creation request failed:", await edgeResp.text());
         }
       }
       // Case 2: Only deleted - user wants to create after
