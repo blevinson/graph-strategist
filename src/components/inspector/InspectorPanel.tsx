@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Trash2, AlertTriangle, Target } from 'lucide-react';
+import { X, Trash2, AlertTriangle, Target, Play, Loader2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Collapsible,
   CollapsibleContent,
@@ -29,14 +31,86 @@ export default function InspectorPanel() {
   const [editedProps, setEditedProps] = useState<any>({});
   const [blockers, setBlockers] = useState<any[]>([]);
   const [impactedGoals, setImpactedGoals] = useState<any[]>([]);
+  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [runningWorkflows, setRunningWorkflows] = useState<Set<string>>(new Set());
 
   const node = nodes.find((n) => n.id === selectedNode);
 
   useEffect(() => {
     if (node) {
       setEditedProps(node.data.props);
+      fetchNodeWorkflows();
     }
   }, [node]);
+
+  const fetchNodeWorkflows = async () => {
+    if (!selectedNode) return;
+
+    const { data, error } = await supabase
+      .from('workflows')
+      .select('*, workflow_steps(*)')
+      .eq('node_id', selectedNode)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setWorkflows(data);
+    }
+  };
+
+  const runWorkflow = async (workflowId: string) => {
+    try {
+      setRunningWorkflows(prev => new Set(prev).add(workflowId));
+
+      const { data, error } = await supabase
+        .from('workflow_runs')
+        .insert({
+          workflow_id: workflowId,
+          status: 'queued',
+          log: { events: [] }
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await supabase.functions.invoke('workflow-runner', {
+        method: 'POST'
+      });
+
+      toast.success('Workflow started');
+
+      const pollStatus = async () => {
+        const { data: run } = await supabase
+          .from('workflow_runs')
+          .select('status')
+          .eq('id', data.id)
+          .single();
+
+        if (run && (run.status === 'succeeded' || run.status === 'failed')) {
+          setRunningWorkflows(prev => {
+            const next = new Set(prev);
+            next.delete(workflowId);
+            return next;
+          });
+          toast[run.status === 'succeeded' ? 'success' : 'error'](
+            `Workflow ${run.status}`
+          );
+        } else {
+          setTimeout(pollStatus, 1000);
+        }
+      };
+      setTimeout(pollStatus, 1000);
+
+    } catch (error) {
+      console.error('Failed to run workflow:', error);
+      toast.error('Failed to start workflow');
+      setRunningWorkflows(prev => {
+        const next = new Set(prev);
+        next.delete(workflowId);
+        return next;
+      });
+    }
+  };
 
   if (!node) {
     return (
@@ -158,6 +232,54 @@ export default function InspectorPanel() {
             </Button>
           </div>
         </div>
+
+        {/* Workflows Section */}
+        {workflows.length > 0 && (
+          <div className="space-y-3 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              <h3 className="text-sm font-semibold">Workflows</h3>
+              <Badge variant="secondary">{workflows.length}</Badge>
+            </div>
+            <div className="space-y-2">
+              {workflows.map((workflow) => {
+                const isRunning = runningWorkflows.has(workflow.id);
+                return (
+                  <div
+                    key={workflow.id}
+                    className="p-3 rounded-lg border bg-muted/50 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{workflow.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {workflow.mode} • {workflow.workflow_steps?.length || 0} steps
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => runWorkflow(workflow.id)}
+                        disabled={isRunning}
+                      >
+                        {isRunning ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                            Running
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-3 w-3 mr-2" />
+                            Run
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Connected Edges */}
         <Collapsible>

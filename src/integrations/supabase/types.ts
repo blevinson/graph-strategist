@@ -165,6 +165,7 @@ export type Database = {
           id: string
           mode: Database["public"]["Enums"]["workflow_mode"]
           name: string
+          node_id: string | null
           updated_at: string
         }
         Insert: {
@@ -172,6 +173,7 @@ export type Database = {
           id?: string
           mode?: Database["public"]["Enums"]["workflow_mode"]
           name: string
+          node_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -179,9 +181,18 @@ export type Database = {
           id?: string
           mode?: Database["public"]["Enums"]["workflow_mode"]
           name?: string
+          node_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workflows_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
