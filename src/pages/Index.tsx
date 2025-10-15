@@ -2,7 +2,9 @@ import GraphCanvas from '@/components/graph/GraphCanvas';
 import InspectorPanel from '@/components/inspector/InspectorPanel';
 import SearchBar from '@/components/toolbar/SearchBar';
 import AddNodeFAB from '@/components/toolbar/AddNodeFAB';
+import WorkflowPanel from '@/components/workflows/WorkflowPanel';
 import { ReactFlowProvider } from 'reactflow';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
   return (
@@ -23,7 +25,20 @@ const Index = () => {
           <div className="flex-1 relative">
             <GraphCanvas />
           </div>
-          <InspectorPanel />
+          <div className="w-96 border-l border-border bg-card overflow-hidden flex flex-col">
+            <Tabs defaultValue="inspector" className="flex-1 flex flex-col">
+              <TabsList className="w-full rounded-none border-b">
+                <TabsTrigger value="inspector" className="flex-1">Inspector</TabsTrigger>
+                <TabsTrigger value="workflows" className="flex-1">Workflows</TabsTrigger>
+              </TabsList>
+              <TabsContent value="inspector" className="flex-1 overflow-auto m-0">
+                <InspectorPanel />
+              </TabsContent>
+              <TabsContent value="workflows" className="flex-1 overflow-auto m-0">
+                <WorkflowPanel />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
 
         {/* FAB */}

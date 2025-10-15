@@ -40,7 +40,7 @@ export default function InspectorPanel() {
 
   if (!node) {
     return (
-      <div className="w-96 h-full bg-card border-l border-border p-6 flex items-center justify-center">
+      <div className="h-full p-6 flex items-center justify-center">
         <p className="text-muted-foreground text-center">
           Select a node to view details
         </p>
@@ -83,7 +83,7 @@ export default function InspectorPanel() {
   };
 
   return (
-    <div className="w-96 h-full bg-card border-l border-border overflow-y-auto">
+    <div className="h-full overflow-y-auto">
       <div className="sticky top-0 bg-card border-b border-border p-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{config.emoji}</span>
