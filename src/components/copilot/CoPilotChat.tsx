@@ -33,42 +33,24 @@ export const CoPilotChat = () => {
   // Handle incoming copilot messages from other components
   useEffect(() => {
     if (copilotMessage) {
-      setInput(copilotMessage);
+      const messageToSend = copilotMessage;
       setCopilotMessage(null);
-      // Auto-send the message
-      setTimeout(() => {
-        handleSend();
-      }, 100);
+      
+      // Send the message directly
+      sendMessage(messageToSend);
     }
   }, [copilotMessage]);
 
-  useEffect(() => {
-    const scrollToBottom = () => {
-      const element = scrollRef.current;
-      if (element) {
-        console.log('Scrolling - scrollHeight:', element.scrollHeight, 'scrollTop:', element.scrollTop);
-        element.scrollTop = element.scrollHeight;
-        console.log('After scroll - scrollTop:', element.scrollTop);
-      }
-    };
-    
-    // Multiple approaches to ensure scroll happens
-    scrollToBottom();
-    setTimeout(scrollToBottom, 0);
-    setTimeout(scrollToBottom, 100);
-  }, [messages, isLoading]);
-
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (messageText: string) => {
+    if (!messageText.trim() || isLoading) return;
 
     const userMessage: Message = {
       role: 'user',
-      content: input,
+      content: messageText,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
     setIsLoading(true);
 
     try {
@@ -79,7 +61,7 @@ export const CoPilotChat = () => {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ prompt: input }),
+        body: JSON.stringify({ prompt: messageText }),
       });
 
       if (!response.ok) {
@@ -115,6 +97,30 @@ export const CoPilotChat = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const scrollToBottom = () => {
+      const element = scrollRef.current;
+      if (element) {
+        console.log('Scrolling - scrollHeight:', element.scrollHeight, 'scrollTop:', element.scrollTop);
+        element.scrollTop = element.scrollHeight;
+        console.log('After scroll - scrollTop:', element.scrollTop);
+      }
+    };
+    
+    // Multiple approaches to ensure scroll happens
+    scrollToBottom();
+    setTimeout(scrollToBottom, 0);
+    setTimeout(scrollToBottom, 100);
+  }, [messages, isLoading]);
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+    
+    const messageToSend = input;
+    setInput('');
+    await sendMessage(messageToSend);
   };
 
   return (
