@@ -61,7 +61,7 @@ const Index = () => {
                 <TabsTrigger value="copilot" className="flex-1">Co-Pilot</TabsTrigger>
               </TabsList>
               <TabsContent value="palette" className="flex-1 m-0 overflow-hidden">
-                <div className="h-full overflow-y-auto p-4 pb-24">
+                <div className="h-full overflow-y-auto p-4 pb-24 custom-scrollbar">
                   <NodePalette />
                 </div>
               </TabsContent>

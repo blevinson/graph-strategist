@@ -168,7 +168,7 @@ export default function InspectorPanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="sticky top-0 bg-card border-b border-border p-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{config.emoji}</span>

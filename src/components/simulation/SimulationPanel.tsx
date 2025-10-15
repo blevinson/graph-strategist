@@ -29,7 +29,7 @@ export const SimulationPanel = () => {
         </p>
       </div>
 
-      <ScrollArea className="flex-1 min-h-0">
+      <ScrollArea className="flex-1 min-h-0 custom-scrollbar">
         <div className="p-4 space-y-4">
           {simulationStatus && (
             <Card className="border-primary/20 bg-primary/5">
