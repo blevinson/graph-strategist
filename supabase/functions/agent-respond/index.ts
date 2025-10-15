@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!;
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -477,32 +477,48 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
       }
     ];
 
-    // Call Lovable AI with tool calling
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Call Claude with tool calling
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages,
-        tools,
-        tool_choice: { type: "auto" }
+        model: 'claude-sonnet-4-5',
+        max_tokens: 4096,
+        messages: [messages[1]], // Only user message, system is separate
+        system: messages[0].content, // System message separate
+        tools
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error('Claude error:', response.status, errorText);
+      throw new Error(`Claude API error: ${response.status}`);
     }
 
     const aiResponse = await response.json();
-    console.log("AI Response:", JSON.stringify(aiResponse, null, 2));
+    console.log("Claude Response:", JSON.stringify(aiResponse, null, 2));
 
-    const message = aiResponse.choices[0].message;
-    const toolCalls = message.tool_calls || [];
+    // Parse Claude response
+    let messageText = '';
+    const toolCalls = [];
+    for (const content of aiResponse.content) {
+      if (content.type === 'text') {
+        messageText += content.text;
+      } else if (content.type === 'tool_use') {
+        toolCalls.push({
+          id: content.id,
+          function: {
+            name: content.name,
+            arguments: JSON.stringify(content.input)
+          }
+        });
+      }
+    }
     
     // Execute all tool calls
     const toolResults: Array<{
@@ -531,7 +547,7 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
     }
 
     // Handle multi-step operations: delete+create, or create+edges
-    let outputText = message.content || "";
+    let outputText = messageText;
     
     if (toolCalls.length > 0) {
       const createdNodes = toolResults.filter(r => r.tool === 'create_node' && r.result?.id);
@@ -544,28 +560,25 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
           .map((r, i) => `Node ${i + 1}: ${r.result.props.name} (ID: ${r.result.id})`)
           .join('\n');
 
-        const edgeMessages = [
-          ...messages, message,
-          ...toolCalls.map((tc: any, i: number) => ({
-            role: "tool", tool_call_id: tc.id,
-            content: JSON.stringify(toolResults[i].result || toolResults[i].error)
-          })),
-          {
-            role: "user",
-            content: `Created:\n${nodeIds}\n\n**CRITICAL: You MUST call create_edge for EACH connection in this request: "${prompt}"\n\nDo NOT respond with text. ONLY use the create_edge tool multiple times.**`
-          }
-        ];
+        const edgeSystemPrompt = messages[0].content;
+        const edgeUserMessage = `Created:\n${nodeIds}\n\n**CRITICAL: You MUST call create_edge for EACH connection in this request: "${prompt}"\n\nDo NOT respond with text. ONLY use the create_edge tool multiple times.**`;
 
         console.log("Requesting edge creation with node IDs:", nodeIds);
 
-        const edgeResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        const edgeResp = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+          headers: { 
+            'x-api-key': ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json' 
+          },
           body: JSON.stringify({ 
-            model: 'google/gemini-2.5-flash', 
-            messages: edgeMessages, 
+            model: 'claude-sonnet-4-5',
+            max_tokens: 4096,
+            messages: [{ role: 'user', content: edgeUserMessage }],
+            system: edgeSystemPrompt,
             tools,
-            tool_choice: { type: "required" }  // Force tool usage
+            tool_choice: { type: "any" }  // Force tool usage
           })
         });
 
@@ -573,8 +586,21 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
 
         if (edgeResp.ok) {
           const edgeData = await edgeResp.json();
-          console.log("Edge creation AI response:", JSON.stringify(edgeData, null, 2));
-          const edgeToolCalls = edgeData.choices[0].message.tool_calls || [];
+          console.log("Edge creation Claude response:", JSON.stringify(edgeData, null, 2));
+          
+          // Parse Claude tool calls
+          const edgeToolCalls = [];
+          for (const content of edgeData.content) {
+            if (content.type === 'tool_use') {
+              edgeToolCalls.push({
+                id: content.id,
+                function: {
+                  name: content.name,
+                  arguments: JSON.stringify(content.input)
+                }
+              });
+            }
+          }
           console.log(`Executing ${edgeToolCalls.length} edge creation calls`);
           
           for (const tc of edgeToolCalls) {
@@ -593,53 +619,65 @@ Step 3: create_edge({source: x_id, target: y_id, type: "triggers"})
       }
       // Case 2: Only deleted - user wants to create after
       else if (hasDeletes && prompt.toLowerCase().includes('create')) {
-        const createMessages = [
-          ...messages, message,
-          ...toolCalls.map((tc: any, i: number) => ({
-            role: "tool", tool_call_id: tc.id,
-            content: JSON.stringify(toolResults[i].result || toolResults[i].error)
-          })),
-          { role: "user", content: `Deleted. Now CREATE: "${prompt}"` }
-        ];
-
-        const createResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        const createResp = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages: createMessages, tools })
+          headers: { 
+            'x-api-key': ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify({ 
+            model: 'claude-sonnet-4-5',
+            max_tokens: 4096,
+            messages: [{ role: 'user', content: `Deleted. Now CREATE: "${prompt}"` }],
+            system: messages[0].content,
+            tools 
+          })
         });
 
         if (createResp.ok) {
           const createData = await createResp.json();
           const newNodeIds: string[] = [];
-          for (const tc of (createData.choices[0].message.tool_calls || [])) {
-            try {
-              const result = await executeTool(tc.function.name, JSON.parse(tc.function.arguments));
-              toolResults.push({ tool: tc.function.name, result });
-              if (tc.function.name === 'create_node' && result?.id) {
-                newNodeIds.push(`${result.props.name} (ID: ${result.id})`);
-              }
-            } catch (e) { console.error(e); }
+          
+          // Parse Claude tool calls
+          for (const content of createData.content) {
+            if (content.type === 'tool_use') {
+              try {
+                const result = await executeTool(content.name, content.input);
+                toolResults.push({ tool: content.name, result });
+                if (content.name === 'create_node' && result?.id) {
+                  newNodeIds.push(`${result.props.name} (ID: ${result.id})`);
+                }
+              } catch (e) { console.error(e); }
+            }
           }
           
           // Now edges
           if (newNodeIds.length > 0) {
-            const edgeMessages2 = [
-              ...createMessages, createData.choices[0].message,
-              { role: "user", content: `Created:\n${newNodeIds.join('\n')}\n\nNow edges for: "${prompt}"` }
-            ];
-
-            const edgeResp2 = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+            const edgeResp2 = await fetch('https://api.anthropic.com/v1/messages', {
               method: 'POST',
-              headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages: edgeMessages2, tools })
+              headers: { 
+                'x-api-key': ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01',
+                'Content-Type': 'application/json' 
+              },
+              body: JSON.stringify({ 
+                model: 'claude-sonnet-4-5',
+                max_tokens: 4096,
+                messages: [{ role: 'user', content: `Created:\n${newNodeIds.join('\n')}\n\nNow edges for: "${prompt}"` }],
+                system: messages[0].content,
+                tools 
+              })
             });
 
             if (edgeResp2.ok) {
               const edgeData2 = await edgeResp2.json();
-              for (const tc of (edgeData2.choices[0].message.tool_calls || [])) {
-                try {
-                  await executeTool(tc.function.name, JSON.parse(tc.function.arguments));
-                } catch (e) { console.error(e); }
+              for (const content of edgeData2.content) {
+                if (content.type === 'tool_use') {
+                  try {
+                    await executeTool(content.name, content.input);
+                  } catch (e) { console.error(e); }
+                }
               }
             }
           }
