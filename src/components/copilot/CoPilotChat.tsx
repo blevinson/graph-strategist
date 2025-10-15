@@ -21,7 +21,7 @@ export const CoPilotChat = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "👋 Hi! I'm your Graph Strategist co-pilot. I can help you build and modify your strategy graph. Try saying things like:\n\n- \"Add a goal to launch a new product\"\n- \"Create 3 tasks for the marketing campaign\"\n- \"Show me all my goals\"\n- \"Delete the task called 'Review metrics'\"",
+      content: "👋 Hi! I'm your Graph Strategist co-pilot. I can help you build and modify your strategy graph.\n\n**Quick Start - Click to build a complete example:**\n\n- \"Create a signal called 'New user signup' that triggers a decision 'Is premium user?' which branches to outcome 'Premium onboarding' and outcome 'Free tier onboarding'\"\n- \"Add a goal 'Launch mobile app' with tasks 'Design UI', 'Build backend API', and 'Submit to app stores' where each task depends on the previous one\"\n- \"Create a signal 'Customer complaint received' that triggers task 'Investigate issue' which depends on task 'Assign support agent'\"\n\n**Or try individual commands:**\n- \"Show me all my nodes\"\n- \"Delete the task called 'X'\"\n- \"Update the goal 'Y' to have higher priority\"",
       timestamp: new Date(),
     },
   ]);
