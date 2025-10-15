@@ -31,11 +31,15 @@ const tools = [
     type: "function",
     function: {
       name: "create_node",
-      description: "Create a new node with a label and properties",
+      description: "Create a new node with a label and properties. Use consumer-friendly node types: goal (⭐ what user wants), task (⚙️ steps to reach goals), decision (🔀 branch points), signal (🔔 triggers), outcome (✅ results), risk (⚠️ problems), agent (🤖 AI helpers), tool (🧰 apps/services)",
       parameters: {
         type: "object",
         properties: {
-          label: { type: "string", description: "Node type (e.g., Goal, Task, Signal, Risk)" },
+          label: { 
+            type: "string", 
+            enum: ["goal", "task", "decision", "signal", "outcome", "risk", "agent", "tool"],
+            description: "Node type - use lowercase: goal, task, decision, signal, outcome, risk, agent, tool" 
+          },
           name: { type: "string", description: "Node name" },
           description: { type: "string", description: "Node description" },
           props: { type: "object", description: "Additional properties as JSON" }
@@ -83,7 +87,11 @@ const tools = [
         properties: {
           source: { type: "string", description: "UUID of source node" },
           target: { type: "string", description: "UUID of target node" },
-          type: { type: "string", description: "Relationship type (e.g., DEPENDS_ON, BLOCKS, TRIGGERS)" }
+          type: { 
+            type: "string",
+            enum: ["depends_on", "leads_to", "triggers", "branches_to", "mitigates", "uses"],
+            description: "Relationship type - use lowercase: depends_on (task depends on task/goal), leads_to (task leads to outcome), triggers (signal triggers task/agent/decision), branches_to (decision branches to task/outcome), mitigates (task mitigates risk), uses (task/agent uses tool)" 
+          }
         },
         required: ["source", "target", "type"],
       }
@@ -424,7 +432,7 @@ serve(async (req) => {
     const messages = [
       {
         role: "system",
-        content: "You are a strategic orchestration agent. Your job is to help build, manage, and run graph-based workflows using typed tools. When users ask to create nodes, use appropriate labels like Goal, Task, Signal, Risk, etc. Always use the available tools to perform operations."
+        content: "You are a strategic co-pilot for Graph Strategist, a consumer-friendly planning app. Help users build visual strategies using these node types: goal (⭐ what they want), task (⚙️ steps), decision (🔀 branches), signal (🔔 triggers), outcome (✅ results), risk (⚠️ problems), agent (🤖 AI helpers), tool (🧰 apps). Use lowercase labels: 'goal', 'task', 'decision', 'signal', 'outcome', 'risk', 'agent', 'tool'. Connect with: depends_on, leads_to, triggers, branches_to, mitigates, uses. Be friendly and helpful!"
       },
       {
         role: "user",
