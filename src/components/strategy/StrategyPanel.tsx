@@ -78,8 +78,8 @@ export const StrategyPanel = () => {
   ];
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      <div className="p-6 border-b border-border flex-shrink-0">
+    <div className="h-full flex flex-col">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center gap-2 mb-2">
           <Brain className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-bold">Strategy Agent</h2>
@@ -89,7 +89,7 @@ export const StrategyPanel = () => {
         </p>
       </div>
 
-      <ScrollArea className="flex-1 h-0">
+      <div className="flex-1 overflow-y-auto">
         <div className="p-6 space-y-6">
         {/* Quick Actions */}
         <div className="mb-6">
@@ -164,10 +164,10 @@ export const StrategyPanel = () => {
           </div>
         )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input Area */}
-      <div className="p-6 border-t border-border bg-card/50 flex-shrink-0">
+      <div className="p-6 border-t border-border bg-card/50">
         {selectedNode && (
           <Badge variant="secondary" className="mb-3">
             <Sparkles className="h-3 w-3 mr-1" />
