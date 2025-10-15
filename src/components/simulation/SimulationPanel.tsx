@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Clock, CheckCircle2, XCircle, Activity, Zap, Loader2, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
 
 interface SimulationResult {
   timestamp: Date;
@@ -217,8 +218,8 @@ export const SimulationPanel = () => {
 
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground mb-1">Analysis:</p>
-                  <div className="text-sm text-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded-md">
-                    {sim.analysis}
+                  <div className="text-sm text-foreground bg-muted/30 p-3 rounded-md prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown>{sim.analysis}</ReactMarkdown>
                   </div>
                 </div>
 
